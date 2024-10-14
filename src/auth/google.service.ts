@@ -14,12 +14,21 @@ export class GoogleService {
 
   private tokenAuthUrl = "https://oauth2.googleapis.com/token";
   private googleAuthPath = "https://accounts.google.com/o/oauth2/v2/auth";
-  private clientId = `client_id=${this.configService.get("google.googleClientId")}`;
-  private redirectUri = `redirect_uri=${this.configService.get("google.googleCallbackUrl")}`;
   private userInfoPath = "https://www.googleapis.com/oauth2/v2/userinfo";
-  private googleScope = `response_type=code&scope=${encodeURIComponent(
-    "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
-  )}`;
+
+  private getClientId(): string {
+    return `client_id=${this.configService.get("google.googleClientId")}`;
+  }
+
+  private getRedirectUri(): string {
+    return `redirect_uri=${this.configService.get("google.googleCallbackUrl")}`;
+  }
+
+  private getGoogleScope(): string {
+    return `response_type=code&scope=${encodeURIComponent(
+      "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
+    )}`;
+  }
 
   async loginWithGoogle(userInfo: {
     email: string;
@@ -55,7 +64,7 @@ export class GoogleService {
   }
 
   getGoogleAuthUrl(redirect: string): string {
-    return `${this.googleAuthPath}?${this.clientId}&${this.redirectUri}&${this.googleScope}&state=${encodeURIComponent(redirect)}`;
+    return `${this.googleAuthPath}?${this.getClientId()}&${this.getRedirectUri()}&${this.getGoogleScope()}&state=${encodeURIComponent(redirect)}`;
   }
 
   async getGoogleAccessToken(code: string): Promise<{ access_token: string }> {

@@ -27,6 +27,6 @@ async function bootstrap() {
     credentials: true,
     exposedHeaders: ["set-cookie"],
   });
-  await app.listen(3000);
+  await app.listen(configService.get("app.port"));
 }
 bootstrap();

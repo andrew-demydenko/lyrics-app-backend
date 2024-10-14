@@ -33,18 +33,21 @@ export class UsersController {
     return this.usersService.findAll({ name: query.name });
   }
 
+  @UseGuards(JWTGuard)
   @Get(":id")
   @UseInterceptors(UserFieldsExcludeInterceptor)
   findOne(@Param("id") id: string) {
     return this.usersService.findOne(id);
   }
 
+  @UseGuards(JWTGuard)
   @Patch(":id")
   @UseInterceptors(UserFieldsExcludeInterceptor)
   update(@Param("id") id: string, @Body() data: UpdateUserDto) {
     return this.usersService.update(id, data);
   }
 
+  @UseGuards(JWTGuard)
   @Delete(":id")
   @UseInterceptors(UserFieldsExcludeInterceptor)
   remove(@Param("id") id: string) {

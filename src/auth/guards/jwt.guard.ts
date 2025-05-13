@@ -3,9 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
-  ForbiddenException,
 } from "@nestjs/common";
-
 import { AuthService } from "../auth.service";
 
 @Injectable()
@@ -13,22 +11,21 @@ export class JWTGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const authHeader = request.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new UnauthorizedException("Authorization token missing");
+    }
+
+    const token = authHeader.split(" ")[1];
+
     try {
-      const request = context.switchToHttp().getRequest();
-
-      const { authorization: authorization }: { authorization: string } =
-        request.headers;
-
-      if (!authorization || authorization.trim() === "") {
-        throw new UnauthorizedException("Please provide token");
-      }
-      const authToken = authorization.replace(/bearer/gim, "").trim();
-
-      const resp = await this.authService.validateToken(authToken);
-      request.user = resp;
+      const user = await this.authService.validateToken(token);
+      request.user = user;
       return true;
-    } catch (error) {
-      throw new ForbiddenException(error.message || "session expired");
+    } catch (err) {
+      throw new UnauthorizedException("Invalid or expired token");
     }
   }
 }

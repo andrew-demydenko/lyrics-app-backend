@@ -3,21 +3,21 @@ import {
   Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
   Query,
   Req,
   Res,
   HttpException,
   HttpStatus,
   BadRequestException,
+  UseGuards,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { Request, Response } from "express";
 import { LoginDto } from "./dto/login.dto";
 import { GoogleService } from "./google.service";
 import { RegisterDto } from "./dto/register.dto";
+import { JWTGuard } from "@/auth/guards/jwt.guard";
+import { AuthenticatedRequest } from "@/auth/types/authenticated-request.type";
 
 @Controller("auth")
 export class AuthController {
@@ -26,15 +26,10 @@ export class AuthController {
     private readonly googleService: GoogleService
   ) {}
 
+  @UseGuards(JWTGuard)
   @Get("current-user")
-  getCurrentUser(@Req() request: Request) {
-    const token = request.headers.authorization?.split(" ")[1];
-
-    console.log(request.headers);
-    if (!token) {
-      throw new HttpException("Invalid token", 401);
-    }
-    return this.authService.getCurrentUser(token);
+  getCurrentUser(@Req() request: AuthenticatedRequest) {
+    return request.user;
   }
 
   @Post("register")

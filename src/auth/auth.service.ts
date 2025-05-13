@@ -13,6 +13,7 @@ import { User } from "@prisma/client";
 import { RegisterDto } from "./dto/register.dto";
 import * as bcrypt from "bcrypt";
 import { LoginDto } from "./dto/login.dto";
+import { JwtPayload } from "./types/jwt-payload.type";
 
 @Injectable()
 export class AuthService {
@@ -111,7 +112,7 @@ export class AuthService {
 
   async refreshToken(token: string) {
     try {
-      const user = this.validateToken(
+      const user = await this.validateToken(
         token,
         this.configService.get("jwt.refreshSecret")
       );
@@ -132,21 +133,12 @@ export class AuthService {
     }
   }
 
-  getCurrentUser(token: string) {
-    try {
-      const user = this.validateToken(token);
-      return user;
-    } catch (error) {
-      throw new HttpException("Invalid token", 401);
-    }
-  }
-
-  validateToken(
+  async validateToken(
     token: string,
-    secret: string = this.configService.get("jwt.secret")
-  ) {
+    secret: string = this.configService.get<string>("jwt.secret")
+  ): Promise<JwtPayload> {
     try {
-      return this.jwtService.verify(token, {
+      return await this.jwtService.verifyAsync<JwtPayload>(token, {
         secret,
       });
     } catch (error) {
@@ -200,7 +192,7 @@ export class AuthService {
   setRefreshTokenCookie(response: Response, refreshToken: string) {
     response.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge:
         1000 *

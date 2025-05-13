@@ -44,7 +44,6 @@ export class GoogleService {
 
     try {
       user = await this.usersService.findUserByGoogleId(id);
-      console.log(user);
     } catch (e) {}
 
     if (!user) {

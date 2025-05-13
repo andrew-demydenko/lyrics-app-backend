@@ -23,7 +23,10 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: configService.get("app.frontendUrl"),
+    origin: [
+      configService.get("app.frontendUrl"),
+      configService.get("app.mobileAppUrl"),
+    ],
     credentials: true,
     exposedHeaders: ["set-cookie"],
   });

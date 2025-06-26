@@ -55,7 +55,6 @@ export class AuthService {
         password: await this.cryptoService.hashPasswordBcrypt(password),
         salt,
       };
-
       const newUser = await this.usersService.create(data);
 
       const tokens = await this.generateTokens({
@@ -63,10 +62,9 @@ export class AuthService {
         name: newUser.name,
         email: newUser.email,
       });
-
       return {
         ...tokens,
-        user: { name: user.name, email: user.email, id: user.id },
+        user: { name: newUser.name, email: newUser.email, id: newUser.id },
       };
     } catch (error) {
       throw new HttpException(error, 500);

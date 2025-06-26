@@ -34,16 +34,19 @@ export class UsersService {
     }
   }
 
-  async findUserByEmail(email: string) {
+  async findUserByEmail(
+    email: string,
+    options: { throwIfNotFound: boolean } = { throwIfNotFound: false }
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
 
-    if (!user) {
-      throw new HttpException(`User with email ${email} not found`, 501);
-    } else {
-      return user;
+    if (!user && options.throwIfNotFound) {
+      throw new HttpException(`User with email ${email} not found`, 404);
     }
+
+    return user;
   }
 
   async findUserByGoogleId(googleId: string) {

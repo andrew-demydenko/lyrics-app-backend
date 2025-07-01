@@ -16,7 +16,7 @@ import { JWTGuard } from "./guards/jwt.guard";
     GoogleService,
     JWTGuard,
   ],
-  exports: [AuthService],
+  exports: [AuthService, JWTGuard],
   imports: [forwardRef(() => UsersModule)],
 })
 export class AuthModule {}

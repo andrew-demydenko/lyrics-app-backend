@@ -3,11 +3,15 @@ import { CreateSongDto } from "./dto/create-song.dto";
 import { UpdateSongDto } from "./dto/update-song.dto";
 import { FindAllDto } from "./dto/find-all.dto";
 import { Prisma, Song } from "@prisma/client";
-import { PrismaService } from "src/prisma.service";
+import { PrismaService } from "@/prisma.service";
+import { AccessControlService } from "@/common/services/access-control.service";
 
 @Injectable()
 export class SongsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private accessControlService: AccessControlService
+  ) {}
 
   async create(data: CreateSongDto): Promise<Song> {
     const { name, author, text, chords, userId, shared } = data;
@@ -95,6 +99,8 @@ export class SongsService {
       throw new NotFoundException(`Song with ID ${id} not found`);
     }
 
+    await this.accessControlService.validateAccess(existingSong.userId, "song");
+
     return this.prisma.song.update({
       where: { id },
       data: {
@@ -108,6 +114,16 @@ export class SongsService {
   }
 
   async remove(id: string) {
+    const existingSong = await this.prisma.song.findUnique({
+      where: { id },
+    });
+
+    if (!existingSong) {
+      throw new NotFoundException(`Song with ID ${id} not found`);
+    }
+
+    await this.accessControlService.validateAccess(existingSong.userId, "song");
+
     try {
       return await this.prisma.song.delete({
         where: { id },

@@ -1,5 +1,5 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsBoolean, IsOptional, IsString } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class FindAllPlaylistsDto {
   @IsString()
@@ -8,6 +8,6 @@ export class FindAllPlaylistsDto {
 
   @IsBoolean()
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
+  @Transform(({ value }) => value === "true")
   isDefault?: boolean;
 }

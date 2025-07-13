@@ -41,11 +41,12 @@ model Song {
   userId    String     @map("user_id")
   playlists Playlist[] @relation("PlaylistSongs")
 
-  name   String
-  author String
-  text   String
-  chords Json
-  shared Boolean
+  name     String
+  author   String
+  text     String
+  chords   Json
+  shared   Boolean
+  verified Boolean @default(false)
 
   @@map("song")
 }
@@ -64,7 +65,7 @@ model Playlist {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  name      String
+  name      String  @unique
   isDefault Boolean @default(false) @map("is_default")
 
   user   User   @relation(fields: [userId], references: [id])

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
 import { CreatePlaylistDto } from "./dto/create-playlist.dto";
 import { UpdatePlaylistDto } from "./dto/update-playlist.dto";
@@ -13,6 +17,18 @@ export class PlaylistsService {
   ) {}
 
   async create(userId: string, createPlaylistDto: CreatePlaylistDto) {
+    const existingPlaylist = await this.prisma.playlist.findFirst({
+      where: {
+        userId: userId,
+        name: createPlaylistDto.name,
+      },
+    });
+
+    if (existingPlaylist) {
+      throw new ConflictException(
+        `Playlist with name "${createPlaylistDto.name}" already exists`
+      );
+    }
     if (createPlaylistDto.isDefault) {
       await this.prisma.playlist.updateMany({
         where: { userId, isDefault: true },
@@ -73,15 +89,12 @@ export class PlaylistsService {
     });
 
     if (!defaultPlaylist) {
-      defaultPlaylist = await this.prisma.playlist.create({
-        data: {
-          name: "Favorites",
-          isDefault: true,
-          user: { connect: { id: userId } },
-        },
+      defaultPlaylist = await this.prisma.playlist.findFirst({
+        where: { userId },
         include: {
           songs: true,
         },
+        orderBy: { createdAt: "asc" },
       });
     }
 
@@ -157,7 +170,7 @@ export class PlaylistsService {
 
     await this.accessControlService.validateAccess(playlist.userId, "playlist");
 
-    await this.prisma.playlist.update({
+    const result = await this.prisma.playlist.update({
       where: { id: playlistId },
       data: {
         songs: {
@@ -166,28 +179,25 @@ export class PlaylistsService {
       },
     });
 
-    return playlist;
+    return result;
   }
 
-  async addSongToFavorites(playlistId: string, songId: string) {
-    const favoritesPlaylist = await this.findDefaultPlaylist(playlistId);
+  async setDefaultPlaylist(id: string) {
+    const playlist = await this.findOne(id);
 
-    await this.accessControlService.validateAccess(
-      favoritesPlaylist.userId,
-      "playlist"
-    );
+    await this.accessControlService.validateAccess(playlist.userId, "playlist");
 
-    return this.addSong(favoritesPlaylist.id, songId);
-  }
+    await this.prisma.playlist.updateMany({
+      where: { userId: playlist.userId, isDefault: true },
+      data: { isDefault: false },
+    });
 
-  async removeSongFromFavorites(userId: string, songId: string) {
-    const favoritesPlaylist = await this.findDefaultPlaylist(userId);
-
-    await this.accessControlService.validateAccess(
-      favoritesPlaylist.userId,
-      "playlist"
-    );
-
-    return this.removeSong(favoritesPlaylist.id, songId);
+    return this.prisma.playlist.update({
+      where: { id },
+      data: { isDefault: true },
+      include: {
+        songs: true,
+      },
+    });
   }
 }

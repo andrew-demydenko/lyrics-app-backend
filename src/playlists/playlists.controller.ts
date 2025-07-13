@@ -72,25 +72,8 @@ export class PlaylistsController {
     return this.playlistsService.removeSong(id, songId);
   }
 
-  @Post("favorites/songs")
-  addToFavorites(
-    @CurrentUser() currentUser: JwtPayload,
-    @Body() addSongDto: AddSongToPlaylistDto
-  ) {
-    return this.playlistsService.addSongToFavorites(
-      currentUser.id,
-      addSongDto.songId
-    );
-  }
-
-  @Delete("favorites/songs/:songId")
-  removeFromFavorites(
-    @CurrentUser() currentUser: JwtPayload,
-    @Param("songId") songId: string
-  ) {
-    return this.playlistsService.removeSongFromFavorites(
-      currentUser.id,
-      songId
-    );
+  @Patch(":id/default")
+  setAsDefault(@Param("id") id: string) {
+    return this.playlistsService.setDefaultPlaylist(id);
   }
 }

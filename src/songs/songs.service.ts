@@ -138,4 +138,19 @@ export class SongsService {
       throw error;
     }
   }
+
+  async updateVerifiedStatus(id: string, verified: boolean): Promise<Song> {
+    const existingSong = await this.prisma.song.findUnique({
+      where: { id },
+    });
+
+    if (!existingSong) {
+      throw new NotFoundException(`Song with ID ${id} not found`);
+    }
+
+    return this.prisma.song.update({
+      where: { id },
+      data: { verified },
+    });
+  }
 }

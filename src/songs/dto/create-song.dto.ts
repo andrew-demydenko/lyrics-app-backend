@@ -19,8 +19,7 @@ export class CreateSongDto {
   @IsString()
   text: string;
 
-  @IsJSON()
-  chords: Record<string, string>;
+  chords: Record<string, string>; // Удален декоратор IsJSON для поддержки прямой работы с объектами
 
   @IsUUID()
   userId: string;

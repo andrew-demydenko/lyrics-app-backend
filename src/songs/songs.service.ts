@@ -22,12 +22,16 @@ export class SongsService {
           name,
           author,
           text,
-          chords,
+          chords: JSON.stringify(chords),
           userId,
           shared,
         },
       });
-      return newSong;
+
+      return {
+        ...newSong,
+        chords: JSON.parse(newSong.chords as string),
+      };
     } catch (error) {
       throw new HttpException(error, 500);
     }
@@ -70,7 +74,11 @@ export class SongsService {
         },
       },
     });
-    return songs;
+
+    return songs.map((song) => ({
+      ...song,
+      chords: JSON.parse(song.chords as string),
+    }));
   }
 
   async findOne(id: string): Promise<Song> {
@@ -87,7 +95,11 @@ export class SongsService {
     if (!song) {
       throw new NotFoundException(`Song with ID ${id} not found`);
     }
-    return song;
+
+    return {
+      ...song,
+      chords: JSON.parse(song.chords as string),
+    };
   }
 
   async update(id: string, updateSongDto: UpdateSongDto) {
@@ -101,16 +113,21 @@ export class SongsService {
 
     await this.accessControlService.validateAccess(existingSong.userId, "song");
 
-    return this.prisma.song.update({
+    const updatedSong = await this.prisma.song.update({
       where: { id },
       data: {
         name: updateSongDto.name,
         author: updateSongDto.author,
         text: updateSongDto.text,
-        chords: updateSongDto.chords,
+        chords: JSON.stringify(updateSongDto.chords),
         shared: updateSongDto.shared,
       },
     });
+
+    return {
+      ...updatedSong,
+      chords: JSON.parse(updatedSong.chords as string),
+    };
   }
 
   async remove(id: string) {
@@ -148,9 +165,14 @@ export class SongsService {
       throw new NotFoundException(`Song with ID ${id} not found`);
     }
 
-    return this.prisma.song.update({
+    const updatedSong = await this.prisma.song.update({
       where: { id },
       data: { verified },
     });
+
+    return {
+      ...updatedSong,
+      chords: JSON.parse(updatedSong.chords as string),
+    };
   }
 }

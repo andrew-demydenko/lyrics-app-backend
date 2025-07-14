@@ -45,24 +45,45 @@ export class SongsService {
     } else if (onlyShared) {
       condition.shared = true;
     }
-    if (query) {
-      condition = {
-        ...condition,
-        AND: {
-          OR: [
-            {
-              name: {
-                contains: query,
+    if (query && query.trim()) {
+      const searchTerms = query
+        .trim()
+        .split(/\s+/)
+        .filter((term) => term.length > 0);
+
+      if (searchTerms.length) {
+        // Create an array of conditions for each search term
+        const searchConditions = searchTerms.map((term) => {
+          return {
+            OR: [
+              // For each term try different variations
+              { name: { contains: term.toLowerCase() } },
+              {
+                name: {
+                  contains:
+                    term.charAt(0).toUpperCase() + term.slice(1).toLowerCase(),
+                },
               },
-            },
-            {
-              author: {
-                contains: query,
+              { author: { contains: term.toLowerCase() } },
+              {
+                author: {
+                  contains:
+                    term.charAt(0).toUpperCase() + term.slice(1).toLowerCase(),
+                },
               },
-            },
-          ],
-        },
-      };
+              // Add partial matching
+              { name: { startsWith: term.toLowerCase() } },
+              { author: { startsWith: term.toLowerCase() } },
+            ],
+          };
+        });
+
+        // Combine all term conditions with OR
+        condition = {
+          ...condition,
+          AND: searchConditions,
+        };
+      }
     }
     const songs = await this.prisma.song.findMany({
       where: condition,
@@ -72,6 +93,9 @@ export class SongsService {
             name: true,
           },
         },
+      },
+      orderBy: {
+        name: "asc",
       },
     });
 

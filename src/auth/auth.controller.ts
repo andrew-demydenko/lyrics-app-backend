@@ -62,7 +62,9 @@ export class AuthController {
       await this.googleService.loginWithGoogle(userInfo);
 
     this.authService.setRefreshTokenCookie(response, refreshToken);
-    response.redirect(`${redirect}?token=${accessToken}`);
+    response.redirect(
+      `${redirect}?accessToken=${accessToken}&refreshToken=${refreshToken}`
+    );
   }
 
   @Post("login")
@@ -75,15 +77,16 @@ export class AuthController {
       await this.authService.login(loginDto);
     this.authService.setRefreshTokenCookie(response, refreshToken);
 
-    return response.json({ user, accessToken });
+    return response.json({ user, accessToken, refreshToken });
   }
 
   @Post("refresh-token")
   async refreshToken(
+    @Body() refreshTokenDto: { refreshToken: string },
     @Req() req: Request,
     @Res({ passthrough: true }) response: Response
   ) {
-    const token = req.cookies["refreshToken"];
+    const token = refreshTokenDto.refreshToken || req.cookies["refreshToken"];
     if (!token) {
       throw new HttpException("No refresh token", 401);
     }
@@ -92,7 +95,7 @@ export class AuthController {
       const { accessToken, refreshToken } =
         await this.authService.refreshToken(token);
       this.authService.setRefreshTokenCookie(response, refreshToken);
-      return { accessToken };
+      return { accessToken, refreshToken };
     } catch (error) {
       response.clearCookie("refreshToken", { httpOnly: true });
       throw new HttpException("Refresh token is valid", 401);
@@ -109,7 +112,7 @@ export class AuthController {
       res.clearCookie("refreshToken", { httpOnly: true });
       return res
         .status(HttpStatus.OK)
-        .json({ message: "Logged out successfully" });
+        .json({ status: "success", message: "Logged out successfully" });
     } catch (error) {
       throw new HttpException("Logout error", HttpStatus.INTERNAL_SERVER_ERROR);
     }

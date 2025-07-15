@@ -195,8 +195,8 @@ export class AuthService {
   setRefreshTokenCookie(response: Response, refreshToken: string) {
     response.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: this.configService.get("app.nodeEnv") === "production",
+      sameSite: "none",
       maxAge:
         1000 *
         60 *

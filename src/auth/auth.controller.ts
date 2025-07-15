@@ -98,7 +98,7 @@ export class AuthController {
       return { accessToken, refreshToken };
     } catch (error) {
       response.clearCookie("refreshToken", { httpOnly: true });
-      throw new HttpException("Refresh token is valid", 401);
+      throw new HttpException("Refresh token is not valid", 401);
     }
   }
 

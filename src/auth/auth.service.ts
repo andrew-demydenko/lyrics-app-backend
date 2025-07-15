@@ -119,6 +119,7 @@ export class AuthService {
         token,
         this.configService.get("jwt.refreshSecret")
       );
+      console.log("User from refresh token:", user);
       const refreshToken = await this.prisma.userRefreshToken.findUnique({
         where: {
           userId: user.id,
@@ -126,6 +127,7 @@ export class AuthService {
         },
       });
 
+      console.log("Refresh token from DB:", refreshToken);
       if (!refreshToken) {
         throw new HttpException("Invalid token", 401);
       }
@@ -193,6 +195,10 @@ export class AuthService {
   }
 
   setRefreshTokenCookie(response: Response, refreshToken: string) {
+    console.log(
+      this.configService.get("app.nodeEnv"),
+      this.configService.get("jwt.refreshExpiresIn")
+    );
     response.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: this.configService.get("app.nodeEnv") === "production",

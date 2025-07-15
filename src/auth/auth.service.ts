@@ -75,10 +75,14 @@ export class AuthService {
     try {
       const user = await this.usersService.findUserByEmail(email);
 
+      if (!user) {
+        throw new UnauthorizedException();
+      }
+
       if (
         !(await this.cryptoService.verifyPasswordBcrypt(
           password,
-          user.password
+          user?.password
         ))
       ) {
         throw new UnauthorizedException();
@@ -92,6 +96,7 @@ export class AuthService {
         user: { name: user.name, email: user.email, id: user.id },
       };
     } catch (error) {
+      console.error("Login error:", error);
       throw new UnauthorizedException();
     }
   }

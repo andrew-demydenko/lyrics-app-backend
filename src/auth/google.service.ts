@@ -1,15 +1,18 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import { UsersService } from "@/users/users.service";
 import { AuthService } from "@/auth/auth.service";
 import { ConfigService } from "@nestjs/config";
 import { User } from "@prisma/client";
+import { REQUEST } from "@nestjs/core";
+import { Request } from "express";
 
 @Injectable()
 export class GoogleService {
   constructor(
     private usersService: UsersService,
     private authService: AuthService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    @Inject(REQUEST) private readonly request: Request
   ) {}
 
   private tokenAuthUrl = "https://oauth2.googleapis.com/token";
@@ -21,7 +24,13 @@ export class GoogleService {
   }
 
   private getRedirectUri(): string {
-    return `redirect_uri=${this.configService.get("google.googleCallbackUrl")}`;
+    const req = this.request as Request;
+    const host = req.get("host") || req.header("origin");
+    const protocol = req.header("x-forwarded-proto") || req.protocol || "https";
+    const callbackPath = "/api/auth/google/callback";
+    const fullUrl = `${protocol}://${host}${callbackPath}`;
+
+    return fullUrl;
   }
 
   private getGoogleScope(): string {
@@ -63,7 +72,7 @@ export class GoogleService {
   }
 
   getGoogleAuthUrl(redirect: string): string {
-    return `${this.googleAuthPath}?${this.getClientId()}&${this.getRedirectUri()}&${this.getGoogleScope()}&state=${encodeURIComponent(redirect)}`;
+    return `${this.googleAuthPath}?${this.getClientId()}&redirect_uri=${this.getRedirectUri()}&${this.getGoogleScope()}&state=${encodeURIComponent(redirect)}`;
   }
 
   async getGoogleAccessToken(code: string): Promise<{ access_token: string }> {
@@ -76,7 +85,7 @@ export class GoogleService {
         code,
         client_id: this.configService.get("google.googleClientId"),
         client_secret: this.configService.get("google.googleClientSecret"),
-        redirect_uri: this.configService.get("google.googleCallbackUrl"),
+        redirect_uri: this.getRedirectUri(),
         grant_type: "authorization_code",
       }),
     });

@@ -36,7 +36,6 @@ REFRESH_JWT_ACCESS_TOKEN_EXPIRED_IN="30d" // days
 #Google
 GOOGLE_CLIENT_ID="..."
 GOOGLE_CLIENT_SECRET="..."
-GOOGLE_CALLBACK_URL="..."
 
 # Database
 DATABASE_URL="postgresql://postgres:..."

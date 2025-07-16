@@ -119,7 +119,10 @@ export class AuthService {
         token,
         this.configService.get("jwt.refreshSecret")
       );
-      console.log("User from refresh token:", user);
+
+      const tokens = await this.prisma.userRefreshToken.findMany();
+      console.log("token", token, user.id);
+      console.log("tokens", tokens);
       const refreshToken = await this.prisma.userRefreshToken.findUnique({
         where: {
           userId: user.id,
@@ -127,7 +130,6 @@ export class AuthService {
         },
       });
 
-      console.log("Refresh token from DB:", refreshToken);
       if (!refreshToken) {
         throw new HttpException("Invalid token", 401);
       }

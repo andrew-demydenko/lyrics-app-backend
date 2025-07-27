@@ -77,7 +77,7 @@ export class AuthController {
       await this.authService.login(loginDto);
     this.authService.setRefreshTokenCookie(response, refreshToken);
 
-    return response.json({ user, accessToken, refreshToken });
+    return { user, accessToken, refreshToken };
   }
 
   @Post("refresh-token")

@@ -75,4 +75,9 @@ export class SongsController {
 
     return this.songsService.updateVerifiedStatus(id, data.verified);
   }
+
+  @Post(":id/view")
+  incrementViewCount(@Param("id") id: string) {
+    return this.songsService.incrementViewCount(id);
+  }
 }

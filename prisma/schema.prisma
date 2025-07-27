@@ -44,6 +44,7 @@ model Song {
   chords   String
   shared   Boolean
   verified Boolean @default(false)
+  views    Int     @default(0)
 
   @@map("song")
 }

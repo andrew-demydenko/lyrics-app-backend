@@ -199,4 +199,28 @@ export class SongsService {
       chords: JSON.parse(updatedSong.chords as string),
     };
   }
+
+  async incrementViewCount(id: string): Promise<Song> {
+    const existingSong = await this.prisma.song.findUnique({
+      where: { id },
+    });
+
+    if (!existingSong) {
+      throw new NotFoundException(`Song with ID ${id} not found`);
+    }
+
+    const updatedSong = await this.prisma.song.update({
+      where: { id },
+      data: {
+        views: {
+          increment: 1,
+        },
+      },
+    });
+
+    return {
+      ...updatedSong,
+      chords: JSON.parse(updatedSong.chords as string),
+    };
+  }
 }

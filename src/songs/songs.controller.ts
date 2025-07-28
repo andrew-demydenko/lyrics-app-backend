@@ -14,6 +14,7 @@ import {
 import { SongsService } from "./songs.service";
 import { CreateSongDto } from "./dto/create-song.dto";
 import { UpdateSongDto } from "./dto/update-song.dto";
+import { GetSongsByIdsDto } from "./dto/get-songs-by-ids.dto";
 import { JWTGuard } from "@/auth/guards/jwt.guard";
 import { Prisma } from "@prisma/client";
 import { JwtPayload } from "@/auth/types/jwt-payload.type";
@@ -79,5 +80,17 @@ export class SongsController {
   @Post(":id/view")
   incrementViewCount(@Param("id") id: string) {
     return this.songsService.incrementViewCount(id);
+  }
+
+  @Post("by-ids")
+  findManyByIds(
+    @Body() getSongsByIdsDto: GetSongsByIdsDto,
+    @Req() request: AuthenticatedRequest
+  ) {
+    const currentUser = request.user as JwtPayload;
+    return this.songsService.findManyByIds(
+      getSongsByIdsDto.ids,
+      currentUser.id
+    );
   }
 }

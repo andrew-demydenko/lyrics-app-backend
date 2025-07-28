@@ -223,4 +223,27 @@ export class SongsService {
       chords: JSON.parse(updatedSong.chords as string),
     };
   }
+
+  async findManyByIds(ids: string[], userId: string): Promise<Song[]> {
+    const isAdmin = await this.accessControlService.isUserAdmin(userId);
+
+    const songs = await this.prisma.song.findMany({
+      where: {
+        id: { in: ids },
+        OR: isAdmin ? undefined : [{ shared: true }, { userId }],
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return songs.map((song) => ({
+      ...song,
+      chords: JSON.parse(song.chords as string),
+    }));
+  }
 }

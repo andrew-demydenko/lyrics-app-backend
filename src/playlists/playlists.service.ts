@@ -3,7 +3,8 @@ import {
   NotFoundException,
   ConflictException,
 } from "@nestjs/common";
-import { PrismaService } from "../prisma.service";
+import { Prisma } from "@prisma/client";
+import { PrismaService } from "@/prisma.service";
 import { CreatePlaylistDto } from "./dto/create-playlist.dto";
 import { UpdatePlaylistDto } from "./dto/update-playlist.dto";
 import { FindAllPlaylistsDto } from "./dto/find-all.dto";
@@ -47,13 +48,17 @@ export class PlaylistsService {
   async findAll(userId: string, params: FindAllPlaylistsDto = {}) {
     const { name, isDefault } = params;
 
-    const where = {
-      userId,
-      ...(name
-        ? { name: { contains: name, mode: "insensitive" as const } }
-        : {}),
-      ...(isDefault !== undefined ? { isDefault } : {}),
-    };
+    const where = { userId } as Prisma.PlaylistWhereInput;
+
+    if (name) {
+      where.name = {
+        contains: name,
+      };
+    }
+
+    if (isDefault) {
+      where.isDefault = isDefault;
+    }
 
     return this.prisma.playlist.findMany({
       where,

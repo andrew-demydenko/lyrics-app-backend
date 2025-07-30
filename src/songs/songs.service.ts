@@ -35,16 +35,31 @@ export class SongsService {
     }
   }
 
-  async findAll(data: FindAllDto = {}): Promise<Song[]> {
-    const { userId, onlyShared, query } = data;
+  async findAll(data: FindAllDto = {}): Promise<{
+    songs: Song[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const {
+      userId,
+      shared,
+      search,
+      page = 1,
+      limit = 20,
+      sortBy = "name",
+      sortOrder = "asc",
+    } = data;
+
     let condition: Prisma.SongWhereInput = {};
     if (userId) {
       condition.userId = userId;
-    } else if (onlyShared) {
+    } else if (shared) {
       condition.shared = true;
     }
-    if (query && query.trim()) {
-      const searchTerms = query
+
+    if (search && search.trim()) {
+      const searchTerms = search
         .trim()
         .split(/\s+/)
         .filter((term) => term.length > 0);
@@ -83,6 +98,19 @@ export class SongsService {
         };
       }
     }
+
+    const total = await this.prisma.song.count({ where: condition });
+
+    const skip = (page - 1) * limit;
+    const totalPages = Math.ceil(total / limit);
+
+    const orderBy: Prisma.SongOrderByWithRelationInput = {};
+    if (["name", "author", "createdAt", "views"].includes(sortBy)) {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.name = "asc";
+    }
+
     const songs = await this.prisma.song.findMany({
       where: condition,
       include: {
@@ -92,12 +120,17 @@ export class SongsService {
           },
         },
       },
-      orderBy: {
-        name: "asc",
-      },
+      orderBy,
+      skip: limit === -1 ? 0 : (page - 1) * limit,
+      take: limit === -1 ? undefined : limit,
     });
 
-    return songs;
+    return {
+      songs,
+      total,
+      page,
+      totalPages,
+    };
   }
 
   async findOne(id: string): Promise<Song> {

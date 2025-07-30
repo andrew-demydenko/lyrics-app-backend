@@ -17,6 +17,7 @@ import { FilesInterceptor } from "@nestjs/platform-express";
 import { SongsService } from "./songs.service";
 import { CreateSongDto } from "./dto/create-song.dto";
 import { UpdateSongDto } from "./dto/update-song.dto";
+import { FindAllDto } from "./dto/find-all.dto";
 import { GetSongsByIdsDto } from "./dto/get-songs-by-ids.dto";
 import { JWTGuard } from "@/auth/guards/jwt.guard";
 import { JwtPayload } from "@/auth/types/jwt-payload.type";
@@ -39,13 +40,13 @@ export class SongsController {
   }
 
   @Get("user/:id")
-  findUserSongs(@Param("id") id: string) {
-    return this.songsService.findAll({ userId: id });
+  findUserSongs(@Param("id") id: string, @Query() findAllDto: FindAllDto) {
+    return this.songsService.findAll({ ...findAllDto, userId: id });
   }
 
   @Get("shared")
-  findSharedSongs(@Query() query: { search?: string }) {
-    return this.songsService.findAll({ onlyShared: true, query: query.search });
+  findSharedSongs(@Query() findAllDto: FindAllDto) {
+    return this.songsService.findAll({ ...findAllDto, shared: true });
   }
 
   @Get(":id")

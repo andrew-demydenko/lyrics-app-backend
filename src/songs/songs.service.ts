@@ -5,6 +5,7 @@ import { FindAllDto } from "./dto/find-all.dto";
 import { Prisma, Song } from "@prisma/client";
 import { PrismaService } from "@/prisma.service";
 import { AccessControlService } from "@/common/services/access-control.service";
+import { parseChordText, ChordTextPart } from "./utils/chord-parser";
 
 @Injectable()
 export class SongsService {
@@ -28,10 +29,7 @@ export class SongsService {
         },
       });
 
-      return {
-        ...newSong,
-        chords: JSON.parse(newSong.chords as string),
-      };
+      return newSong;
     } catch (error) {
       throw new HttpException(error, 500);
     }
@@ -99,10 +97,7 @@ export class SongsService {
       },
     });
 
-    return songs.map((song) => ({
-      ...song,
-      chords: JSON.parse(song.chords as string),
-    }));
+    return songs;
   }
 
   async findOne(id: string): Promise<Song> {
@@ -120,10 +115,7 @@ export class SongsService {
       throw new NotFoundException(`Song with ID ${id} not found`);
     }
 
-    return {
-      ...song,
-      chords: JSON.parse(song.chords as string),
-    };
+    return song;
   }
 
   async update(id: string, updateSongDto: UpdateSongDto) {
@@ -148,10 +140,7 @@ export class SongsService {
       },
     });
 
-    return {
-      ...updatedSong,
-      chords: JSON.parse(updatedSong.chords as string),
-    };
+    return updatedSong;
   }
 
   async remove(id: string) {
@@ -194,10 +183,7 @@ export class SongsService {
       data: { verified },
     });
 
-    return {
-      ...updatedSong,
-      chords: JSON.parse(updatedSong.chords as string),
-    };
+    return updatedSong;
   }
 
   async incrementViewCount(id: string): Promise<Song> {
@@ -218,10 +204,7 @@ export class SongsService {
       },
     });
 
-    return {
-      ...updatedSong,
-      chords: JSON.parse(updatedSong.chords as string),
-    };
+    return updatedSong;
   }
 
   async findManyByIds(ids: string[], userId: string): Promise<Song[]> {
@@ -241,9 +224,55 @@ export class SongsService {
       },
     });
 
-    return songs.map((song) => ({
-      ...song,
-      chords: JSON.parse(song.chords as string),
-    }));
+    return songs;
+  }
+
+  async importSongs(
+    songs: { name: string; author: string; text: string }[],
+    userId: string
+  ): Promise<{ imported: number; skipped: number; errors: string[] }> {
+    const result = {
+      imported: 0,
+      skipped: 0,
+      errors: [],
+    };
+
+    for (const songData of songs) {
+      try {
+        const existingSong = await this.prisma.song.findFirst({
+          where: {
+            name: songData.name,
+            author: songData.author,
+          },
+        });
+
+        if (existingSong) {
+          result.skipped++;
+          continue;
+        }
+
+        const parsedData = parseChordText(songData.text);
+
+        await this.prisma.song.create({
+          data: {
+            name: songData.name,
+            author: songData.author,
+            text: parsedData.text || songData.text,
+            chords: JSON.stringify(parsedData.chords || {}),
+            shared: true,
+            verified: true,
+            userId,
+          },
+        });
+
+        result.imported++;
+      } catch (error) {
+        const errorMessage = `Ошибка при импорте песни "${songData.name}": ${error.message}`;
+        result.errors.push(errorMessage);
+        console.error(errorMessage);
+      }
+    }
+
+    return result;
   }
 }

@@ -48,6 +48,13 @@ lerna-debug.log*
 
 # Runtime data
 pids
+
+# Database
+*.db
+*.db-journal
+
+# Uploads
+/uploads
 *.pid
 *.seed
 *.pid.lock

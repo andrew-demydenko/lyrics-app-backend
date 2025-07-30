@@ -161,8 +161,9 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync({
       id: user.id,
-      name: user.name,
-      email: user.email,
+      name: currentUser.name,
+      email: currentUser.email,
+      isAdmin: currentUser.isAdmin,
     });
 
     const refreshToken = await this.jwtService.signAsync(

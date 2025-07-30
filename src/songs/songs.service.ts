@@ -14,9 +14,20 @@ export class SongsService {
     private accessControlService: AccessControlService
   ) {}
 
-  async create(data: CreateSongDto): Promise<Song> {
-    const { name, author, text, chords, userId, shared } = data;
+  private capitalizeWords(str: string): string {
+    if (!str) return str;
 
+    return str
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  async create(data: CreateSongDto): Promise<Song> {
+    const { text, chords, userId, shared } = data;
+
+    const name = this.capitalizeWords(data.name);
+    const author = this.capitalizeWords(data.author);
     try {
       const newSong = await this.prisma.song.create({
         data: {
@@ -100,9 +111,7 @@ export class SongsService {
     }
 
     const total = await this.prisma.song.count({ where: condition });
-
-    const skip = (page - 1) * limit;
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = limit === -1 ? 1 : Math.ceil(total / limit);
 
     const orderBy: Prisma.SongOrderByWithRelationInput = {};
     if (["name", "author", "createdAt", "views"].includes(sortBy)) {
@@ -165,8 +174,8 @@ export class SongsService {
     const updatedSong = await this.prisma.song.update({
       where: { id },
       data: {
-        name: updateSongDto.name,
-        author: updateSongDto.author,
+        name: this.capitalizeWords(updateSongDto.name),
+        author: this.capitalizeWords(updateSongDto.author),
         text: updateSongDto.text,
         chords: JSON.stringify(updateSongDto.chords),
         shared: updateSongDto.shared,

@@ -10,11 +10,14 @@ import { Type } from "class-transformer";
 
 export class FindAllDto {
   @IsString()
+  @IsOptional()
   search?: string;
 
   @IsUUID()
+  @IsOptional()
   userId?: string;
 
+  @IsOptional()
   @IsBoolean()
   shared?: boolean;
 

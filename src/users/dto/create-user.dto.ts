@@ -11,9 +11,6 @@ export class CreateUserDto {
   email: string;
 
   @IsString()
-  salt?: string;
-
-  @IsString()
   googleId?: string;
 
   @IsString()

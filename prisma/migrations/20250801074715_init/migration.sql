@@ -7,7 +7,6 @@ CREATE TABLE "user" (
     "name" TEXT NOT NULL,
     "isAdmin" BOOLEAN NOT NULL DEFAULT false,
     "password" TEXT,
-    "salt" TEXT,
     "google_id" TEXT,
     "provider" TEXT
 );

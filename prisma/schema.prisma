@@ -19,7 +19,6 @@ model User {
   name         String
   isAdmin      Boolean           @default(false)
   password     String?
-  salt         String?
   googleId     String?           @unique @map("google_id")
   provider     String?
   songs        Song[]

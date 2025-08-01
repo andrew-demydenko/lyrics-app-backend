@@ -15,9 +15,6 @@ export class UserFieldsExcludeInterceptor implements NestInterceptor {
       if (typeof user.password !== "undefined") {
         delete user.password;
       }
-      if (typeof user.salt !== "undefined") {
-        delete user.salt;
-      }
     };
     return next.handle().pipe(
       map((data) => {

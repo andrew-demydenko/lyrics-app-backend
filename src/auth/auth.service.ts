@@ -28,13 +28,15 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findUserByEmail(email);
 
-    if (
-      user &&
-      user.password === (await this.cryptoService.hashPasswordBcrypt(password))
-    ) {
-      return user;
+    if (user && user.password) {
+      const isValid = await this.cryptoService.verifyPasswordBcrypt(
+        password,
+        user.password
+      );
+      if (isValid) {
+        return user;
+      }
     }
-
     return null;
   }
 
@@ -48,12 +50,10 @@ export class AuthService {
         throw new HttpException("User already exists", 409);
       }
 
-      const salt = await bcrypt.genSalt(10);
       const data = {
         name,
         email,
         password: await this.cryptoService.hashPasswordBcrypt(password),
-        salt,
       };
       const newUser = await this.usersService.create(data);
 
@@ -126,6 +126,7 @@ export class AuthService {
           refreshToken: token,
         },
       });
+      console.log("Refresh token found:", refreshToken, user);
 
       if (!refreshToken) {
         throw new HttpException("Invalid token", 401);

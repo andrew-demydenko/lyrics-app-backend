@@ -29,6 +29,7 @@ export class AuthController {
   @UseGuards(JWTGuard)
   @Get("current-user")
   getCurrentUser(@Req() request: AuthenticatedRequest) {
+    console.log("current-user", request.cookies["refreshToken"]);
     return request.user;
   }
 
@@ -38,7 +39,8 @@ export class AuthController {
       await this.authService.register(registerDto);
     this.authService.setRefreshTokenCookie(response, refreshToken);
 
-    return response.json({ user, accessToken });
+    console.log("register:", refreshToken);
+    return response.json({ user, accessToken, refreshToken });
   }
 
   @Get("google")
@@ -61,6 +63,7 @@ export class AuthController {
     const { accessToken, refreshToken } =
       await this.googleService.loginWithGoogle(userInfo);
 
+    console.log("User logged in:", refreshToken);
     this.authService.setRefreshTokenCookie(response, refreshToken);
     response.redirect(
       `${redirect}?accessToken=${accessToken}&refreshToken=${refreshToken}`
@@ -76,6 +79,7 @@ export class AuthController {
     const { accessToken, refreshToken, user } =
       await this.authService.login(loginDto);
     this.authService.setRefreshTokenCookie(response, refreshToken);
+    console.log("User logged in:", refreshToken);
 
     return { user, accessToken, refreshToken };
   }

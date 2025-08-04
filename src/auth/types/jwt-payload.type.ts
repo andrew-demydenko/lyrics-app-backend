@@ -4,4 +4,6 @@ export interface JwtPayload {
   email: string;
   iat?: number;
   exp?: number;
+  isVerified?: boolean;
+  isAdmin?: boolean;
 }

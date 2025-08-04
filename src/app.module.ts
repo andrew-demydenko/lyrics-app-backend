@@ -9,6 +9,7 @@ import appConfig from "./config/app.config";
 import jwtConfig from "./config/jwt.config";
 import googleConfig from "./config/google.config";
 import databaseConfig from "./config/database.config";
+import emailConfig from "./config/email.config";
 import { JwtModule } from "@nestjs/jwt";
 import { PrismaService } from "./prisma.service";
 
@@ -21,7 +22,7 @@ import { PrismaService } from "./prisma.service";
     CommonModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, jwtConfig, databaseConfig, googleConfig],
+      load: [appConfig, jwtConfig, databaseConfig, googleConfig, emailConfig],
     }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

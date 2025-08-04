@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsArray, IsUUID } from "class-validator";
+import { IsString, IsEmail } from "class-validator";
 
 export class CreateUserDto {
   @IsString()
@@ -15,4 +15,6 @@ export class CreateUserDto {
 
   @IsString()
   provider?: string;
+
+  isVerified?: boolean;
 }

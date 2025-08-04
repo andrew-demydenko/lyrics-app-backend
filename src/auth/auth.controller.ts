@@ -9,13 +9,14 @@ import {
   HttpException,
   HttpStatus,
   BadRequestException,
-  UseGuards,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { Request, Response } from "express";
 import { LoginDto } from "./dto/login.dto";
 import { GoogleService } from "./google.service";
 import { RegisterDto } from "./dto/register.dto";
+import { UsersService } from "@/users/users.service";
 import { JWTGuard } from "@/auth/guards/jwt.guard";
 import { AuthenticatedRequest } from "@/auth/types/authenticated-request.type";
 
@@ -23,14 +24,34 @@ import { AuthenticatedRequest } from "@/auth/types/authenticated-request.type";
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly googleService: GoogleService
+    private readonly googleService: GoogleService,
+    private readonly usersService: UsersService
   ) {}
 
-  @UseGuards(JWTGuard)
   @Get("current-user")
-  getCurrentUser(@Req() request: AuthenticatedRequest) {
-    console.log("current-user", request.cookies["refreshToken"]);
-    return request.user;
+  async getCurrentUser(@Req() request: AuthenticatedRequest) {
+    const authHeader = request.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new UnauthorizedException("Authorization token missing");
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+      const userData = await this.authService.validateToken(token);
+
+      const user = await this.usersService.findOne(userData.id);
+
+      if (user) {
+        delete user.password;
+        return user;
+      } else {
+        throw new UnauthorizedException("User not found");
+      }
+    } catch (err) {
+      throw new UnauthorizedException("Invalid or expired token");
+    }
   }
 
   @Post("register")
@@ -120,5 +141,41 @@ export class AuthController {
     } catch (error) {
       throw new HttpException("Logout error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  @Get("verify-email")
+  async verifyEmail(@Query("token") token: string) {
+    if (!token) {
+      throw new BadRequestException("Verification token is required");
+    }
+
+    const isVerified = await this.authService.verifyEmail(token);
+
+    if (!isVerified) {
+      throw new HttpException(
+        "Bad request: Invalid or expired verification token",
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    return { status: "success" };
+  }
+
+  @Post("resend-verification")
+  async resendVerificationEmail(
+    @Req() request: AuthenticatedRequest,
+    @Body() data: { url: string; userId: string; cooldownSeconds?: number }
+  ) {
+    const cooldownSeconds =
+      !data.cooldownSeconds || data.cooldownSeconds < 60
+        ? 60
+        : data.cooldownSeconds;
+    await this.authService.sendVerificationEmail(
+      data.userId,
+      data.url,
+      cooldownSeconds
+    );
+
+    return { message: "Verification email sent successfully" };
   }
 }

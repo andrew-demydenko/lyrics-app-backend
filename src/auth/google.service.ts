@@ -61,6 +61,7 @@ export class GoogleService {
         name: given_name,
         googleId: id,
         provider: "google",
+        isVerified: true,
       });
     }
 

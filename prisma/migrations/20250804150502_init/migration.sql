@@ -8,7 +8,18 @@ CREATE TABLE "user" (
     "isAdmin" BOOLEAN NOT NULL DEFAULT false,
     "password" TEXT,
     "google_id" TEXT,
-    "provider" TEXT
+    "provider" TEXT,
+    "is_verified" BOOLEAN NOT NULL DEFAULT false
+);
+
+-- CreateTable
+CREATE TABLE "verification_token" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "token" TEXT NOT NULL,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expires_at" DATETIME NOT NULL,
+    "user_id" TEXT NOT NULL,
+    CONSTRAINT "verification_token_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -59,6 +70,12 @@ CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "user_google_id_key" ON "user"("google_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "verification_token_token_key" ON "verification_token"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "verification_token_user_id_key" ON "verification_token"("user_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "user_refresh_token_user_id_key" ON "user_refresh_token"("user_id");

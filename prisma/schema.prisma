@@ -15,17 +15,30 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  email        String            @unique
-  name         String
-  isAdmin      Boolean           @default(false)
-  password     String?
-  googleId     String?           @unique @map("google_id")
-  provider     String?
-  songs        Song[]
-  playlists    Playlist[]
-  refreshToken UserRefreshToken?
+  email             String             @unique
+  name              String
+  isAdmin           Boolean            @default(false)
+  password          String?
+  googleId          String?            @unique @map("google_id")
+  provider          String?
+  isVerified        Boolean            @default(false) @map("is_verified")
+  songs             Song[]
+  playlists         Playlist[]
+  refreshToken      UserRefreshToken?
+  verificationToken VerificationToken?
 
   @@map("user")
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @unique @map("user_id")
+
+  @@map("verification_token")
 }
 
 model Song {

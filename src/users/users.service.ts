@@ -70,6 +70,17 @@ export class UsersService {
     }
   }
 
+  async updateVerificationStatus(id: string, isVerified: boolean) {
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: { isVerified },
+      });
+    } catch (error) {
+      throw new HttpException(`User with id ${id} not found`, 501);
+    }
+  }
+
   async remove(id: string) {
     try {
       return await this.prisma.user.delete({

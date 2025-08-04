@@ -69,7 +69,12 @@ export class AuthService {
         email: newUser.email,
       });
       return {
-        user: data,
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          isVerified: newUser.isVerified,
+        },
         ...tokens,
       };
     } catch (error) {

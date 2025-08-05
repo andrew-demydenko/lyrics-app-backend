@@ -9,13 +9,13 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 async function main() {
   // Create user Admin if not exists
   let user = await prisma.user.findUnique({
-    where: { email: "admin@gmail.com" },
+    where: { email: "test-admin@guitar-tabs-test.com" },
   });
   if (!user) {
     user = await prisma.user.create({
       data: {
         name: "Admin",
-        email: "admin@gmail.com",
+        email: "test-admin@guitar-tabs-test.com",
         password: ADMIN_PASSWORD,
         isAdmin: true,
         isVerified: true,

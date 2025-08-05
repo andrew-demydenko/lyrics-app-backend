@@ -18,6 +18,7 @@ async function main() {
         email: "admin@gmail.com",
         password: ADMIN_PASSWORD,
         isAdmin: true,
+        isVerified: true,
       },
     });
     console.log("Создан пользователь Admin");

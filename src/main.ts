@@ -3,32 +3,37 @@ import { AppModule } from "./app.module";
 import * as cookieParser from "cookie-parser";
 import { ValidationPipe, BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // Добавляем Helmet для установки CSP и других заголовков безопасности
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          fontSrc: ["'self'", "https://fonts.gstatic.com"],
-          imgSrc: ["'self'", "data:", "blob:"],
-          connectSrc: [
-            "'self'",
-            configService.get("app.frontendUrl"),
-            configService.get("app.mobileAppUrl"),
-          ],
-        },
+  const helmetWithCSP = helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: [
+          "'self'",
+          configService.get("app.frontendUrl"),
+          configService.get("app.mobileAppUrl"),
+        ],
       },
-      crossOriginEmbedderPolicy: false,
-    })
-  );
+    },
+    crossOriginEmbedderPolicy: false,
+  });
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.path.includes("/auth/google")) {
+      return next();
+    }
+    return helmetWithCSP(req, res, next);
+  });
 
   app.setGlobalPrefix("api");
   app.use(cookieParser());

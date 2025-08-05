@@ -60,7 +60,7 @@ export class AuthController {
       await this.authService.register(registerDto);
     this.authService.setRefreshTokenCookie(response, refreshToken);
 
-    console.log("register:", refreshToken);
+    // console.log("register:", refreshToken);
     return response.json({ user, accessToken, refreshToken });
   }
 
@@ -100,7 +100,7 @@ export class AuthController {
     const { accessToken, refreshToken, user } =
       await this.authService.login(loginDto);
     this.authService.setRefreshTokenCookie(response, refreshToken);
-    console.log("User logged in:", refreshToken);
+    // console.log("User logged in:", refreshToken);
 
     return { user, accessToken, refreshToken };
   }

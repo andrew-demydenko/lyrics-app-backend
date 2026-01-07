@@ -1,6 +1,9 @@
 {
   "name": "lyrics-app-backend",
   "version": "0.0.1",
+  "engines": {
+    "node": ">=20.16.0 <21.0.0" 
+  },
   "description": "",
   "author": "",
   "private": true,

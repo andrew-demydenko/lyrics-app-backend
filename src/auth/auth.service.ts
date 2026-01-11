@@ -222,8 +222,7 @@ export class AuthService {
     response.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: this.configService.get("app.nodeEnv") === "production",
-      sameSite:
-        this.configService.get("app.nodeEnv") === "production" ? "none" : "lax",
+      sameSite: "none",
       maxAge:
         1000 *
         60 *

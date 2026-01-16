@@ -4,6 +4,7 @@ import { UpdateSongDto } from "./dto/update-song.dto";
 import { FindAllDto } from "./dto/find-all.dto";
 import { Prisma, Song } from "@prisma/client";
 import { PrismaService } from "@/prisma.service";
+import { SongLine } from "./types/song-line.type";
 import { AccessControlService } from "@/common/services/access-control.service";
 
 @Injectable()
@@ -174,7 +175,7 @@ export class SongsService {
       data: {
         name: this.capitalizeWords(updateSongDto.name),
         author: this.capitalizeWords(updateSongDto.author),
-        chords: JSON.stringify(updateSongDto.lines),
+        lines: JSON.stringify(updateSongDto.lines),
         shared: updateSongDto.shared,
       },
     });
@@ -267,7 +268,7 @@ export class SongsService {
   }
 
   async importSongs(
-    songs: { name: string; author: string; text: string }[],
+    songs: { name: string; author: string; text: string; lines: SongLine[] }[],
     userId: string
   ): Promise<{ imported: number; skipped: number; errors: string[] }> {
     const result = {

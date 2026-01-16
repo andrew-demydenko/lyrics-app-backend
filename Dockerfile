@@ -20,7 +20,7 @@ set -e
 
 if [ "$RESET_DB" = "true" ]; then
 echo "RESET_DB=true → running reset database"
-npx prisma migrate reset
+npx prisma migrate reset --force
 fi
 
 npx prisma migrate deploy

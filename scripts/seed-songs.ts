@@ -57,15 +57,14 @@ async function main() {
       });
       if (exists) continue;
 
-      // Parse chords
-      const parsedData = parseChordText(songData.text);
+      // Convert to new format
+      const lines = parseChordText(songData.text);
 
       await prisma.song.create({
         data: {
           name: songData.name,
           author: songData.author,
-          text: parsedData.text || songData.text,
-          chords: JSON.stringify(parsedData.chords || {}),
+          lines: JSON.stringify(lines),
           shared: true,
           verified: true,
           userId,

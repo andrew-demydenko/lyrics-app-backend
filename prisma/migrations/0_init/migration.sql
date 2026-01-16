@@ -30,8 +30,7 @@ CREATE TABLE "song" (
     "user_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "author" TEXT NOT NULL,
-    "text" TEXT NOT NULL,
-    "chords" TEXT NOT NULL,
+    "lines" TEXT NOT NULL,
     "shared" BOOLEAN NOT NULL,
     "verified" BOOLEAN NOT NULL DEFAULT false,
     "views" INTEGER NOT NULL DEFAULT 0,
@@ -88,3 +87,4 @@ CREATE UNIQUE INDEX "_PlaylistSongs_AB_unique" ON "_PlaylistSongs"("A", "B");
 
 -- CreateIndex
 CREATE INDEX "_PlaylistSongs_B_index" ON "_PlaylistSongs"("B");
+

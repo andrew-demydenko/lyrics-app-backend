@@ -5,7 +5,6 @@ import { FindAllDto } from "./dto/find-all.dto";
 import { Prisma, Song } from "@prisma/client";
 import { PrismaService } from "@/prisma.service";
 import { AccessControlService } from "@/common/services/access-control.service";
-import { parseChordText, ChordTextPart } from "./utils/chord-parser";
 
 @Injectable()
 export class SongsService {
@@ -24,7 +23,7 @@ export class SongsService {
   }
 
   async create(data: CreateSongDto): Promise<Song> {
-    const { text, chords, userId, shared } = data;
+    const { lines, userId, shared } = data;
 
     const name = this.capitalizeWords(data.name);
     const author = this.capitalizeWords(data.author);
@@ -33,8 +32,7 @@ export class SongsService {
         data: {
           name,
           author,
-          text,
-          chords: JSON.stringify(chords),
+          lines: JSON.stringify(lines),
           userId,
           shared,
         },
@@ -47,7 +45,7 @@ export class SongsService {
   }
 
   async findAll(data: FindAllDto = {}): Promise<{
-    songs: Song[];
+    songs: any[];
     total: number;
     page: number;
     totalPages: number;
@@ -142,7 +140,7 @@ export class SongsService {
     };
   }
 
-  async findOne(id: string): Promise<Song> {
+  async findOne(id: string): Promise<any> {
     const song = await this.prisma.song.findUnique({
       where: { id },
       include: {
@@ -176,8 +174,7 @@ export class SongsService {
       data: {
         name: this.capitalizeWords(updateSongDto.name),
         author: this.capitalizeWords(updateSongDto.author),
-        text: updateSongDto.text,
-        chords: JSON.stringify(updateSongDto.chords),
+        chords: JSON.stringify(updateSongDto.lines),
         shared: updateSongDto.shared,
       },
     });
@@ -249,7 +246,7 @@ export class SongsService {
     return updatedSong;
   }
 
-  async findManyByIds(ids: string[], userId: string): Promise<Song[]> {
+  async findManyByIds(ids: string[], userId: string): Promise<any[]> {
     const isAdmin = await this.accessControlService.isUserAdmin(userId);
 
     const songs = await this.prisma.song.findMany({
@@ -293,14 +290,11 @@ export class SongsService {
           continue;
         }
 
-        const parsedData = parseChordText(songData.text);
-
         await this.prisma.song.create({
           data: {
             name: songData.name,
             author: songData.author,
-            text: parsedData.text || songData.text,
-            chords: JSON.stringify(parsedData.chords || {}),
+            lines: JSON.stringify(songData.lines),
             shared: true,
             verified: true,
             userId,

@@ -4,7 +4,11 @@ import {
   IsJSON,
   IsUUID,
   IsBoolean,
+  ValidateNested,
+  IsArray,
 } from "class-validator";
+import { Type } from "class-transformer";
+import { SongLine } from "../types/song-line.type";
 
 export class CreateSongDto {
   @IsNotEmpty()
@@ -15,11 +19,10 @@ export class CreateSongDto {
   @IsString()
   author: string;
 
-  @IsNotEmpty()
-  @IsString()
-  text: string;
-
-  chords: Record<string, string>; // Удален декоратор IsJSON для поддержки прямой работы с объектами
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SongLine)
+  lines: SongLine[];
 
   @IsUUID()
   userId: string;

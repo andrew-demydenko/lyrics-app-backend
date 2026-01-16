@@ -52,8 +52,7 @@ model Song {
 
   name     String
   author   String
-  text     String
-  chords   String
+  lines    String // JSON with lines
   shared   Boolean
   verified Boolean @default(false)
   views    Int     @default(0)

@@ -21,15 +21,15 @@ set -e
 if [ "$RESET_DB" = "true" ]; then
 echo "RESET_DB=true → running reset database"
 npx prisma migrate reset
+fi
 
 npx prisma migrate deploy
+
 if [ "$SEED" = "true" ]; then
 echo "SEED=true → running seed-songs"
 yarn seed-songs
 else
 echo "SEED is not enabled → skipping seed"
-
-
 fi
 
 exec "$@"

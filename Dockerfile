@@ -17,12 +17,19 @@ EXPOSE 3000
 RUN cat << 'EOF' > /entrypoint.sh
 #!/bin/sh
 set -e
+
+if [ "$RESET_DB" = "true" ]; then
+echo "RESET_DB=true → running reset database"
+npx prisma migrate reset
+
 npx prisma migrate deploy
 if [ "$SEED" = "true" ]; then
-  echo "SEED=true → running seed-songs"
-  yarn seed-songs
+echo "SEED=true → running seed-songs"
+yarn seed-songs
 else
-  echo "SEED is not enabled → skipping seed"
+echo "SEED is not enabled → skipping seed"
+
+
 fi
 
 exec "$@"

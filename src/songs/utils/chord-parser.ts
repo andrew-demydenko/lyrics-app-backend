@@ -1,84 +1,19 @@
 import { SongLine } from "../types/song-line.type";
 import { CHORDS } from "./constants";
 
-// Checks if a string is service information
-export function isServiceLine(text: string): boolean {
-  if (!text) return false;
-  const trimmedText = text.trim();
-  if (!trimmedText) return false;
+export const normalizeSongStringText = (
+  text: string,
+  chords: Record<number, string>
+): string => {
+  const indexes = Object.keys(chords).map(Number);
 
-  // Check for special characters not used in regular sentences
-  const specialCharsRegex = /[{}[\]|\\~`@#$%^&*+=<>]/;
-  if (specialCharsRegex.test(trimmedText)) {
-    return true;
-  }
+  if (!indexes.length) return text;
 
-  // Check for keywords followed by a space or colon
-  const serviceKeywords = [
-    "куплет",
-    "припев",
-    "бридж",
-    "кода",
-    "инструментал",
-    "проигрыш",
-    "вступление",
-    "outro",
-    "intro",
-    "verse",
-    "chorus",
-    "bridge",
-    "coda",
-    "автор",
-    "текст",
-    "музыка",
-    "composer",
-    "lyrics by",
-    "music by",
-  ];
+  const maxIndex = Math.max(...indexes);
 
-  const keywordPattern = new RegExp(
-    `^(?:${serviceKeywords.join("|")})(?:\\s|:|$)`,
-    "i"
-  );
-  if (keywordPattern.test(trimmedText)) {
-    return true;
-  }
+  if (maxIndex < text.length) return text;
 
-  // Check for repeats in parentheses
-  if (/^\([x\d](?:\s?(?:раза?))?\)$/i.test(trimmedText)) {
-    return true;
-  }
-
-  // Check for copyrights
-  if (/^[©℗®]/.test(trimmedText)) {
-    return true;
-  }
-
-  // Check for separators
-  const separatorPatterns = [
-    /^[-—–=]{3,}$/, // Дефисы и тире
-    /^[_.]{3,}$/, // Точки и подчеркивания
-    /^[*]{3,}$/, // Звездочки
-    /^[=]{3,}$/, // Знаки равенства
-    /^[^a-zа-яё\d]*$/i, // Строки только из символов-разделителей
-  ];
-
-  if (separatorPatterns.some((pattern) => pattern.test(trimmedText))) {
-    return true;
-  }
-
-  return false;
-}
-
-// Checks if a string contains chords
-export const isChordsLine = (text: string): boolean => {
-  if (!text) return false;
-
-  const parts = text.trim().split(/\s+/);
-
-  if (!parts.length) return false;
-
-  return parts.every((part) => CHORDS.includes(part));
+  return text + " ".repeat(maxIndex - text.length + 1);
 };
 
 export const parseChordText = (text: string): SongLine[] => {
@@ -123,10 +58,6 @@ export const parseChordText = (text: string): SongLine[] => {
     return chords;
   };
 
-  const pushLine = (line: SongLine) => {
-    lines.push(line);
-  };
-
   for (let i = 0; i < rawLines.length; i++) {
     const line = rawLines[i];
     const prev = lines[lines.length - 1];
@@ -144,11 +75,11 @@ export const parseChordText = (text: string): SongLine[] => {
       if (nextIsSongString) {
         const chords = parseChords(line);
 
-        pushLine({
+        lines.push({
           id,
           orderIndex: orderIndex++,
           type: "songString",
-          text: next,
+          text: normalizeSongStringText(next, chords),
           chords,
         });
 
@@ -171,7 +102,7 @@ export const parseChordText = (text: string): SongLine[] => {
       if (prev?.type === "plainText") {
         prev.text += "\n" + line;
       } else {
-        pushLine({
+        lines.push({
           id,
           orderIndex: orderIndex++,
           type: "plainText",
@@ -182,7 +113,7 @@ export const parseChordText = (text: string): SongLine[] => {
     }
 
     /** -------- songString без аккордов -------- */
-    pushLine({
+    lines.push({
       id,
       orderIndex: orderIndex++,
       type: "songString",
@@ -192,4 +123,67 @@ export const parseChordText = (text: string): SongLine[] => {
   }
 
   return lines;
+};
+
+// Checks if a string is service information
+export function isServiceLine(text: string): boolean {
+  if (!text) return false;
+
+  const trimmedText = text.trim();
+  if (!trimmedText) return false;
+
+  // 1. Check for special characters that should not appear in song lyrics
+  const invalidChars = /[{}[\]|\\~`@#$©℗®%^&*+=<>_]/;
+  if (invalidChars.test(trimmedText)) {
+    return true;
+  }
+
+  // 2. Check for separators: 2+ separator characters in a row
+  const hasMultipleSeparators = /[-—–.,!?/\\():;"']{2,}/.test(trimmedText);
+  if (hasMultipleSeparators) {
+    return true;
+  }
+
+  // 3. Check for keywords at the beginning of the line followed by : or -
+  const serviceKeywords = [
+    "куплет",
+    "припев",
+    "бридж",
+    "кода",
+    "инструментал",
+    "проигрыш",
+    "вступление",
+    "outro",
+    "intro",
+    "verse",
+    "chorus",
+    "bridge",
+    "автор",
+    "текст",
+    "музыка",
+    "composer",
+    "lyrics",
+    "music",
+  ];
+
+  const keywordPattern = new RegExp(
+    `^(${serviceKeywords.join("|")})\\s*[:—–-]`,
+    "i"
+  );
+  if (keywordPattern.test(trimmedText)) {
+    return true;
+  }
+
+  return false;
+}
+
+// Checks if a string contains chords
+export const isChordsLine = (text: string): boolean => {
+  if (!text) return false;
+
+  const parts = text.trim().split(/\s+/);
+
+  if (!parts.length) return false;
+
+  return parts.every((part) => CHORDS.includes(part));
 };

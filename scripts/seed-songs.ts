@@ -5,14 +5,11 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { parseChordText } from "../src/songs/utils/chord-parser";
-import { writeFile, mkdir, readFile, readdir, rm } from "fs/promises";
-import * as path from "path";
-import * as tar from "tar";
 
 const prisma = new PrismaClient();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-// Настройки S3 / RustFS
+// Setup S3 / RustFS
 const s3 = new S3Client({
   region: "ger-de",
   endpoint: process.env.RUSTFS_ENDPOINT,
@@ -32,7 +29,7 @@ async function streamToBuffer(stream: any): Promise<Buffer> {
 }
 
 async function main() {
-  // Создаём Admin, если не существует
+  // Create Admin, if not exists
   let user = await prisma.user.findUnique({
     where: { email: "test-admin@guitar-tabs-test.com" },
   });
@@ -52,50 +49,26 @@ async function main() {
   const userId = user.id;
   const importedSongs: string[] = [];
 
-  // Получаем список архивов в RustFS
   const listCommand = new ListObjectsV2Command({
     Bucket: BUCKET_NAME,
-    Prefix: "song-uploads/",
+    Prefix: "songs-files/",
   });
   const listResponse = await s3.send(listCommand);
 
-  const tarFiles =
+  const jsonFiles =
     listResponse.Contents?.map((f) => f.Key!).filter((k) =>
-      k.endsWith(".tar"),
+      k.endsWith(".json"),
     ) || [];
-  if (!tarFiles.length)
-    throw new Error("Не найдено архивов .tar в song-uploads");
+  if (!jsonFiles.length) throw new Error("Не найдено json-файлов");
 
-  // Берём последний архив по имени (ISO-дата в имени)
-  const lastArchive = tarFiles.sort().pop()!;
-  console.log("Последний архив:", lastArchive);
-
-  // Получаем архив
-  const getCommand = new GetObjectCommand({
-    Bucket: BUCKET_NAME,
-    Key: lastArchive,
-  });
-  const response = await s3.send(getCommand);
-  const buffer = await streamToBuffer(response.Body);
-
-  // Создаём временную папку для распаковки
-  const extractDir = path.join("/tmp", "song-uploads");
-  await mkdir(extractDir, { recursive: true });
-
-  // Сохраняем архив во временную папку
-  const tarPath = path.join(extractDir, "last-archive.tar");
-  await writeFile(tarPath, buffer as any);
-
-  // Разархивируем
-  await tar.extract({ file: tarPath, cwd: extractDir });
-
-  // Читаем JSON-файлы из распакованного архива
-  const files = readdir(extractDir);
-  for (const file of await files) {
-    if (!file.endsWith(".json")) continue;
-
-    const filePath = path.join(extractDir, file);
-    const songs = JSON.parse(await readFile(filePath, "utf-8"));
+  for (const file of jsonFiles) {
+    const getCommand = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: file,
+    });
+    const response = await s3.send(getCommand);
+    const fileContent = await streamToBuffer(response.Body);
+    const songs = JSON.parse(fileContent.toString("utf-8"));
 
     for (const songData of songs) {
       if (!songData.name || !songData.author || !songData.text) {
@@ -130,7 +103,6 @@ async function main() {
   console.log(
     `Импорт завершён: ${importedSongs.length} песен (${importedSongs.join(", ")})`,
   );
-  await rm(extractDir, { recursive: true, force: true });
 }
 
 main()

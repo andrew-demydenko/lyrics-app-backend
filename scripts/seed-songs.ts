@@ -1,13 +1,38 @@
 import { PrismaClient } from "@prisma/client";
-import * as fs from "fs";
-import * as path from "path";
+import {
+  S3Client,
+  ListObjectsV2Command,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
 import { parseChordText } from "../src/songs/utils/chord-parser";
+import { writeFile, mkdir, readFile, readdir, rm } from "fs/promises";
+import * as path from "path";
+import * as tar from "tar";
 
 const prisma = new PrismaClient();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
+// Настройки S3 / RustFS
+const s3 = new S3Client({
+  region: "ger-de",
+  endpoint: process.env.RUSTFS_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.RUSTFS_ACCESS_KEY!,
+    secretAccessKey: process.env.RUSTFS_SECRET_KEY!,
+  },
+  forcePathStyle: true,
+});
+
+const BUCKET_NAME = "backups";
+
+async function streamToBuffer(stream: any): Promise<Buffer> {
+  const chunks: any[] = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
 async function main() {
-  // Create user Admin if not exists
+  // Создаём Admin, если не существует
   let user = await prisma.user.findUnique({
     where: { email: "test-admin@guitar-tabs-test.com" },
   });
@@ -25,39 +50,66 @@ async function main() {
   }
 
   const userId = user.id;
+  const importedSongs: string[] = [];
 
-  // Find all JSON files in /songs-store
-  const songsDir = path.join(__dirname, "./songs-store");
-  const files = fs.readdirSync(songsDir).filter((f) => f.endsWith(".json"));
-  const importedSongs = [];
+  // Получаем список архивов в RustFS
+  const listCommand = new ListObjectsV2Command({
+    Bucket: BUCKET_NAME,
+    Prefix: "song-uploads/",
+  });
+  const listResponse = await s3.send(listCommand);
 
-  for (const file of files) {
-    const filePath = path.join(songsDir, file);
-    let songs = [];
-    try {
-      songs = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-    } catch (e) {
-      console.error(`Ошибка чтения файла ${file}: ${e.message}`);
-      continue;
-    }
+  const tarFiles =
+    listResponse.Contents?.map((f) => f.Key!).filter((k) =>
+      k.endsWith(".tar"),
+    ) || [];
+  if (!tarFiles.length)
+    throw new Error("Не найдено архивов .tar в song-uploads");
+
+  // Берём последний архив по имени (ISO-дата в имени)
+  const lastArchive = tarFiles.sort().pop()!;
+  console.log("Последний архив:", lastArchive);
+
+  // Получаем архив
+  const getCommand = new GetObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: lastArchive,
+  });
+  const response = await s3.send(getCommand);
+  const buffer = await streamToBuffer(response.Body);
+
+  // Создаём временную папку для распаковки
+  const extractDir = path.join("/tmp", "song-uploads");
+  await mkdir(extractDir, { recursive: true });
+
+  // Сохраняем архив во временную папку
+  const tarPath = path.join(extractDir, "last-archive.tar");
+  await writeFile(tarPath, buffer as any);
+
+  // Разархивируем
+  await tar.extract({ file: tarPath, cwd: extractDir });
+
+  // Читаем JSON-файлы из распакованного архива
+  const files = readdir(extractDir);
+  for (const file of await files) {
+    if (!file.endsWith(".json")) continue;
+
+    const filePath = path.join(extractDir, file);
+    const songs = JSON.parse(await readFile(filePath, "utf-8"));
 
     for (const songData of songs) {
       if (!songData.name || !songData.author || !songData.text) {
         console.warn(
-          `Пропущена песня из-за отсутствия данных: ${JSON.stringify(songData)}`
+          `Пропущена песня из-за отсутствия данных: ${JSON.stringify(songData)}`,
         );
         continue;
       }
-      // Check if song exists
+
       const exists = await prisma.song.findFirst({
-        where: {
-          name: songData.name,
-          author: songData.author,
-        },
+        where: { name: songData.name, author: songData.author },
       });
       if (exists) continue;
 
-      // Convert to new format
       const lines = parseChordText(songData.text);
 
       await prisma.song.create({
@@ -70,13 +122,15 @@ async function main() {
           userId,
         },
       });
+
       importedSongs.push(songData.name);
     }
   }
+
   console.log(
-    "Импорт завершён",
-    `${importedSongs.length} пеcен: (${importedSongs.join(", ")})`
+    `Импорт завершён: ${importedSongs.length} песен (${importedSongs.join(", ")})`,
   );
+  await rm(extractDir, { recursive: true, force: true });
 }
 
 main()

@@ -3,7 +3,7 @@ import { CHORDS } from "./constants";
 
 export const normalizeSongStringText = (
   text: string,
-  chords: Record<number, string>
+  chords: Record<number, string>,
 ): string => {
   const indexes = Object.keys(chords).map(Number);
 
@@ -29,8 +29,15 @@ export const parseChordText = (text: string): SongLine[] => {
   const calculatePosition = (text: string): number =>
     Array.from(text).reduce((pos, char) => pos + getCharWidth(char), 0);
 
+  type ParsedChord = {
+    rawPos: number;
+    chord: string;
+    length: number;
+  };
+
   const parseChords = (line: string): Record<number, string> => {
-    const chords: Record<number, string> = {};
+    const result: ParsedChord[] = [];
+
     let currentWord = "";
     let currentPos = 0;
 
@@ -40,8 +47,13 @@ export const parseChordText = (text: string): SongLine[] => {
       if (char === " ") {
         if (CHORDS.includes(currentWord)) {
           const pos = currentPos - calculatePosition(currentWord);
-          chords[Math.round(pos)] = currentWord;
+          result.push({
+            rawPos: pos,
+            chord: currentWord,
+            length: currentWord.length,
+          });
         }
+
         currentWord = "";
         currentPos += getCharWidth(char);
       } else {
@@ -52,10 +64,30 @@ export const parseChordText = (text: string): SongLine[] => {
 
     if (currentWord && CHORDS.includes(currentWord)) {
       const pos = currentPos - calculatePosition(currentWord);
-      chords[Math.round(pos)] = currentWord;
+      result.push({
+        rawPos: pos,
+        chord: currentWord,
+        length: currentWord.length,
+      });
     }
 
-    return chords;
+    const extraSymbols = 2;
+    const normalizedChrods: Record<number, string> = {};
+    let lastEnd = -Infinity;
+
+    for (const chord of result) {
+      let pos = Math.round(chord.rawPos);
+
+      // если аккорд налезает — сдвигаем вправо
+      if (pos <= lastEnd + extraSymbols) {
+        pos = lastEnd + extraSymbols + 1;
+      }
+
+      normalizedChrods[pos] = chord.chord;
+      lastEnd = pos + chord.length;
+    }
+
+    return normalizedChrods;
   };
 
   for (let i = 0; i < rawLines.length; i++) {
@@ -139,7 +171,7 @@ export function isServiceLine(text: string): boolean {
   }
 
   // 2. Check for separators: 2+ separator characters in a row
-  const hasMultipleSeparators = /[-—–.,!?/\\():;"']{2,}/.test(trimmedText);
+  const hasMultipleSeparators = /([-—–,!?/\\():;"'])\1{1,}/.test(trimmedText);
   if (hasMultipleSeparators) {
     return true;
   }
@@ -168,7 +200,7 @@ export function isServiceLine(text: string): boolean {
 
   const keywordPattern = new RegExp(
     `^(${serviceKeywords.join("|")})\\s*[:—–-]`,
-    "i"
+    "i",
   );
   if (keywordPattern.test(trimmedText)) {
     return true;

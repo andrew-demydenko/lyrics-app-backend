@@ -1,8 +1,8 @@
 {
   "name": "lyrics-app-backend",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "engines": {
-    "node": ">=20.16.0 <21.0.0"
+    "node": "22.16.0"
   },
   "description": "",
   "author": "",
@@ -24,6 +24,7 @@
     "seed-songs": "npx ts-node ./scripts/seed-songs.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.972.0",
     "@nestjs/cli": "^11.0.7",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.3",
@@ -46,6 +47,7 @@
     "nodemailer": "^7.0.5",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
+    "tar": "^7.5.6",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
@@ -90,5 +92,5 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   },
-  "packageManager": "yarn@1.22.21"
+  "packageManager": "yarn@1.22.22"
 }

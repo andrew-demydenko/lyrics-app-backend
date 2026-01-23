@@ -16654,14 +16654,25 @@ type ChordFingers = {
   positions: ChordPosition[];
 };
 
+const normalizeChordName = (name: string): string => {
+  // A → Amaj
+  if (/^[A-G](#|b)?$/.test(name)) {
+    return `${name}maj`;
+  }
+
+  return name;
+};
+
 const getChordFingers = (chordNames: string[]): ChordFingers[] => {
   return chordNames
-    .map((name) => {
+    .map((rawName) => {
+      const name = normalizeChordName(rawName);
       const chord = chordFingers[name];
+
       if (!chord) return null;
 
       return {
-        chord: name,
+        chord: rawName, // сохраняем исходное имя ("A")
         root: chord.root,
         type: chord.type,
         structure: chord.structure,

@@ -6,12 +6,13 @@ import { Prisma, Song } from "@prisma/client";
 import { PrismaService } from "@/prisma.service";
 import { SongLine } from "./types/song-line.type";
 import { AccessControlService } from "@/common/services/access-control.service";
+import { getChordFingers, getSongChords } from "./utils";
 
 @Injectable()
 export class SongsService {
   constructor(
     private prisma: PrismaService,
-    private accessControlService: AccessControlService
+    private accessControlService: AccessControlService,
   ) {}
 
   private capitalizeWords(str: string): string {
@@ -156,7 +157,12 @@ export class SongsService {
       throw new NotFoundException(`Song with ID ${id} not found`);
     }
 
-    return song;
+    await this.accessControlService.validateAccess(song.userId, "song");
+
+    return {
+      ...song,
+      fingers: getChordFingers(getSongChords(JSON.parse(song.lines))),
+    };
   }
 
   async update(id: string, updateSongDto: UpdateSongDto) {
@@ -269,7 +275,7 @@ export class SongsService {
 
   async importSongs(
     songs: { name: string; author: string; text: string; lines: SongLine[] }[],
-    userId: string
+    userId: string,
   ): Promise<{ imported: number; skipped: number; errors: string[] }> {
     const result = {
       imported: 0,

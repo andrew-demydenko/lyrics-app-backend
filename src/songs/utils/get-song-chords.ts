@@ -1,6 +1,15 @@
 import { SongLine } from "../types/song-line.type";
 import { CHORDS } from "./constants";
 
+let cachedChordRegex: RegExp | null = null;
+
+function getChordRegex(): RegExp {
+  if (!cachedChordRegex) {
+    cachedChordRegex = new RegExp(`\\b(${CHORDS.join("|")})\\b`, "g");
+  }
+  return cachedChordRegex;
+}
+
 export const getSongChords = (lines: SongLine[]): string[] => {
   const chordsSet = new Set<string>();
 
@@ -11,13 +20,7 @@ export const getSongChords = (lines: SongLine[]): string[] => {
         chordsSet.add(chord);
       });
     } else if (line.type === "chordRiff" || line.type === "plainText") {
-      // For chordRiff and plainText lines, use regex to find chords
-      const lineRegex = new RegExp(
-        getChordRegex().source,
-        getChordRegex().flags,
-      );
-      const matches = line.text.match(lineRegex);
-
+      const matches = line.text.match(getChordRegex());
       if (matches) {
         matches.forEach((match) => {
           chordsSet.add(match);
@@ -27,11 +30,4 @@ export const getSongChords = (lines: SongLine[]): string[] => {
   });
 
   return Array.from(chordsSet);
-};
-
-export const getChordRegex = (): RegExp => {
-  const escapedChords = CHORDS.map((chord) =>
-    chord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-  );
-  return new RegExp(`\\b(${escapedChords.join("|")})\\b`, "gi");
 };

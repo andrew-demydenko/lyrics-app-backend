@@ -4,6 +4,7 @@ import { UsersModule } from "./users/users.module";
 import { AuthModule } from "./auth/auth.module";
 import { PlaylistsModule } from "./playlists/playlists.module";
 import { CommonModule } from "./common/common.module";
+import { NotificationsModule } from "./notifications/notifications.module";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import appConfig from "./config/app.config";
 import jwtConfig from "./config/jwt.config";
@@ -20,6 +21,7 @@ import { PrismaService } from "./prisma.service";
     AuthModule,
     PlaylistsModule,
     CommonModule,
+    NotificationsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, jwtConfig, databaseConfig, googleConfig, emailConfig],

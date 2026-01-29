@@ -22,10 +22,12 @@ model User {
   googleId          String?            @unique @map("google_id")
   provider          String?
   isVerified        Boolean            @default(false) @map("is_verified")
+  expoPushToken     String?            @map("expo_push_token")
   songs             Song[]
   playlists         Playlist[]
   refreshToken      UserRefreshToken?
   verificationToken VerificationToken?
+  notifications     Notification[]
 
   @@map("user")
 }
@@ -82,4 +84,29 @@ model Playlist {
   songs  Song[] @relation("PlaylistSongs")
 
   @@map("playlist")
+}
+
+model Notification {
+  id            String    @id @default(uuid())
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  userId        String    @map("user_id")
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title         String
+  body          String
+  data          String?
+
+  expoPushToken String    @map("expo_push_token")
+  status        String    @default("pending")
+  expoMessageId String?   @map("expo_message_id")
+  errorMessage  String?   @map("error_message")
+  retryCount    Int       @default(0) @map("retry_count")
+
+  scheduledFor  DateTime? @map("scheduled_for")
+  sentAt        DateTime? @map("sent_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("notification")
 }

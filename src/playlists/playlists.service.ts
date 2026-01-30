@@ -8,13 +8,13 @@ import { PrismaService } from "@/prisma.service";
 import { CreatePlaylistDto } from "./dto/create-playlist.dto";
 import { UpdatePlaylistDto } from "./dto/update-playlist.dto";
 import { FindAllPlaylistsDto } from "./dto/find-all.dto";
-import { AccessControlService } from "@/common/services/access-control.service";
+import { AccessControlService } from "@/auth/access-control.service";
 
 @Injectable()
 export class PlaylistsService {
   constructor(
     private prisma: PrismaService,
-    private accessControlService: AccessControlService
+    private accessControlService: AccessControlService,
   ) {}
 
   async create(userId: string, createPlaylistDto: CreatePlaylistDto) {
@@ -27,7 +27,7 @@ export class PlaylistsService {
 
     if (existingPlaylist) {
       throw new ConflictException(
-        `Playlist with name "${createPlaylistDto.name}" already exists`
+        `Playlist with name "${createPlaylistDto.name}" already exists`,
       );
     }
     if (createPlaylistDto.isDefault) {
@@ -154,7 +154,7 @@ export class PlaylistsService {
 
     if (!song) {
       throw new NotFoundException(
-        `Song with ID ${songId} not found or not accessible`
+        `Song with ID ${songId} not found or not accessible`,
       );
     }
 

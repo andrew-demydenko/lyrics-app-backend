@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from "@nestjs/common";
 import { Expo } from "expo-server-sdk";
 import { PrismaService } from "@/prisma.service";
-import { AccessControlService } from "@/common/services/access-control.service";
+import { AccessControlService } from "@/auth/access-control.service";
 import {
   SendNotificationDto,
   SendBulkNotificationDto,
@@ -11,7 +11,6 @@ import {
   BulkNotificationResult,
   ExpoPushTicket,
 } from "./interfaces/notification-result.interface";
-import { JwtPayload } from "@/auth/types/jwt-payload.type";
 
 @Injectable()
 export class NotificationsService {
@@ -106,13 +105,7 @@ export class NotificationsService {
 
   async sendBulkNotifications(
     dto: SendBulkNotificationDto,
-    user: JwtPayload,
   ): Promise<BulkNotificationResult> {
-    const isAdmin = await this.accessControlService.isUserAdmin(user.id);
-    if (!isAdmin) {
-      throw new BadRequestException("Only admins can send bulk notifications");
-    }
-
     const results: NotificationResult[] = [];
     let successful = 0;
     let failed = 0;
@@ -156,14 +149,7 @@ export class NotificationsService {
     }));
   }
 
-  async retryFailedNotifications(
-    sender: JwtPayload,
-  ): Promise<BulkNotificationResult> {
-    const isAdmin = await this.accessControlService.isUserAdmin(sender.id);
-    if (!isAdmin) {
-      throw new BadRequestException("Only admins can retry notifications");
-    }
-
+  async retryFailedNotifications(): Promise<BulkNotificationResult> {
     const maxRetries = 3;
 
     const failedNotifications = await this.prisma.notification.findMany({

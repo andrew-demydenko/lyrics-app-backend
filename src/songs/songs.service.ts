@@ -5,7 +5,7 @@ import { FindAllDto } from "./dto/find-all.dto";
 import { Prisma, Song } from "@prisma/client";
 import { PrismaService } from "@/prisma.service";
 import { SongLine } from "./types/song-line.type";
-import { AccessControlService } from "@/common/services/access-control.service";
+import { AccessControlService } from "@/auth/access-control.service";
 import { getChordFingers, getSongChords } from "./utils";
 
 @Injectable()

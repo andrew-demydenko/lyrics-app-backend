@@ -1,8 +1,4 @@
-import {
-  HttpException,
-  Injectable,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { HttpException, Injectable } from "@nestjs/common";
 import { Response } from "express";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
@@ -24,7 +20,7 @@ export class AuthService {
     private cryptoService: CryptoService,
     private prisma: PrismaService,
     private configService: ConfigService,
-    private emailService: EmailService
+    private emailService: EmailService,
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -33,7 +29,7 @@ export class AuthService {
     if (user && user.password) {
       const isValid = await this.cryptoService.verifyPasswordBcrypt(
         password,
-        user.password
+        user.password,
       );
       if (isValid) {
         return user;
@@ -78,7 +74,7 @@ export class AuthService {
         ...tokens,
       };
     } catch (error) {
-      throw new HttpException(error, 500);
+      throw new HttpException("Error while creating user", 500);
     }
   }
 
@@ -91,16 +87,16 @@ export class AuthService {
       const user = await this.usersService.findUserByEmail(email);
 
       if (!user) {
-        throw new UnauthorizedException();
+        throw new HttpException("Email or password is not correct", 401);
       }
 
       if (
         !(await this.cryptoService.verifyPasswordBcrypt(
           password,
-          user?.password
+          user?.password,
         ))
       ) {
-        throw new UnauthorizedException();
+        throw new HttpException("Email or password is not correct", 401);
       }
 
       const payload = { email: user.email, id: user.id };
@@ -119,7 +115,7 @@ export class AuthService {
       };
     } catch (error) {
       console.error("Login error:", error);
-      throw new UnauthorizedException();
+      throw new HttpException("Email or password is not correct", 401);
     }
   }
 
@@ -139,7 +135,7 @@ export class AuthService {
     try {
       const user = await this.validateToken(
         token,
-        this.configService.get("jwt.refreshSecret")
+        this.configService.get("jwt.refreshSecret"),
       );
 
       const refreshToken = await this.prisma.userRefreshToken.findUnique({
@@ -148,7 +144,6 @@ export class AuthService {
           refreshToken: token,
         },
       });
-      console.log("Refresh token found:", refreshToken, user);
 
       if (!refreshToken) {
         throw new HttpException("Invalid token", 401);
@@ -162,7 +157,7 @@ export class AuthService {
 
   async validateToken(
     token: string,
-    secret: string = this.configService.get<string>("jwt.secret")
+    secret: string = this.configService.get<string>("jwt.secret"),
   ): Promise<JwtPayload> {
     try {
       return await this.jwtService.verifyAsync<JwtPayload>(token, {
@@ -174,7 +169,7 @@ export class AuthService {
   }
 
   async generateTokens(
-    user: Partial<User>
+    user: Partial<User>,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const currentUser = await this.usersService.findOne(user.id);
 
@@ -199,7 +194,7 @@ export class AuthService {
       {
         secret: this.configService.get("jwt.refreshSecret"),
         expiresIn: this.configService.get("jwt.refreshExpiresIn"),
-      }
+      },
     );
 
     await this.prisma.userRefreshToken.upsert({
@@ -255,7 +250,7 @@ export class AuthService {
   async sendVerificationEmail(
     userId: string,
     url: string,
-    cooldownSeconds: number
+    cooldownSeconds: number,
   ): Promise<void> {
     const user = await this.usersService.findOne(userId);
     if (!user) {
@@ -273,7 +268,7 @@ export class AuthService {
     if (recentToken) {
       throw new HttpException(
         `Please wait ${cooldownTime} before requesting another verification email`,
-        429
+        429,
       );
     }
 

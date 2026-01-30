@@ -12,12 +12,12 @@ import { JwtPayload } from "@/auth/types/jwt-payload.type";
 export class AccessControlService {
   constructor(
     private prisma: PrismaService,
-    @Inject(REQUEST) private request: any
+    @Inject(REQUEST) private request: any,
   ) {}
 
   async validateAccess(
     resourceUserId: string,
-    resourceName: string = "resource"
+    resourceName: string = "resource",
   ): Promise<void> {
     const currentUser: JwtPayload = this.request["user"];
 
@@ -35,7 +35,7 @@ export class AccessControlService {
 
     if (!isAdmin) {
       throw new ForbiddenException(
-        `Not allowed to modify this ${resourceName}`
+        `Not allowed to modify this ${resourceName}`,
       );
     }
   }

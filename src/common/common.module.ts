@@ -1,5 +1,5 @@
 import { Global, Module } from "@nestjs/common";
-import { AccessControlService } from "./services/access-control.service";
+import { AccessControlService } from "../auth/access-control.service";
 import { FileUploadService } from "./services/file-upload.service";
 import { PrismaService } from "@/prisma.service";
 

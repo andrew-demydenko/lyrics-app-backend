@@ -9,15 +9,12 @@ import {
   HttpException,
   HttpStatus,
   BadRequestException,
-  UnauthorizedException,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { Request, Response } from "express";
 import { LoginDto } from "./dto/login.dto";
 import { GoogleService } from "./google.service";
 import { RegisterDto } from "./dto/register.dto";
-import { UsersService } from "@/users/users.service";
-import { JWTGuard } from "@/auth/guards/jwt.guard";
 import { AuthenticatedRequest } from "@/auth/types/authenticated-request.type";
 
 @Controller("auth")
@@ -25,34 +22,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly googleService: GoogleService,
-    private readonly usersService: UsersService
   ) {}
-
-  @Get("current-user")
-  async getCurrentUser(@Req() request: AuthenticatedRequest) {
-    const authHeader = request.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new UnauthorizedException("Authorization token missing");
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    try {
-      const userData = await this.authService.validateToken(token);
-
-      const user = await this.usersService.findOne(userData.id);
-
-      if (user) {
-        delete user.password;
-        return user;
-      } else {
-        throw new UnauthorizedException("User not found");
-      }
-    } catch (err) {
-      throw new UnauthorizedException("Invalid or expired token");
-    }
-  }
 
   @Post("register")
   async register(@Body() registerDto: RegisterDto, @Res() response: Response) {
@@ -74,11 +44,11 @@ export class AuthController {
   async googleAuthRedirect(
     @Query("code") code: string,
     @Query("state") redirect: string,
-    @Res() response: Response
+    @Res() response: Response,
   ) {
     const tokenData = await this.googleService.getGoogleAccessToken(code);
     const userInfo = await this.googleService.getGoogleUserInfo(
-      tokenData.access_token
+      tokenData.access_token,
     );
 
     const { accessToken, refreshToken } =
@@ -87,7 +57,7 @@ export class AuthController {
     console.log("User logged in:", refreshToken);
     this.authService.setRefreshTokenCookie(response, refreshToken);
     response.redirect(
-      `${redirect}?accessToken=${accessToken}&refreshToken=${refreshToken}`
+      `${redirect}?accessToken=${accessToken}&refreshToken=${refreshToken}`,
     );
   }
 
@@ -95,7 +65,7 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Req() request: Request,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
     const { accessToken, refreshToken, user } =
       await this.authService.login(loginDto);
@@ -109,7 +79,7 @@ export class AuthController {
   async refreshToken(
     @Body() refreshTokenDto: { refreshToken: string },
     @Req() req: Request,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
     const token = refreshTokenDto.refreshToken || req.cookies["refreshToken"];
     if (!token) {
@@ -154,7 +124,7 @@ export class AuthController {
     if (!isVerified) {
       throw new HttpException(
         "Bad request: Invalid or expired verification token",
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -164,7 +134,7 @@ export class AuthController {
   @Post("resend-verification")
   async resendVerificationEmail(
     @Req() request: AuthenticatedRequest,
-    @Body() data: { url: string; userId: string; cooldownSeconds?: number }
+    @Body() data: { url: string; userId: string; cooldownSeconds?: number },
   ) {
     const cooldownSeconds =
       !data.cooldownSeconds || data.cooldownSeconds < 60
@@ -173,7 +143,7 @@ export class AuthController {
     await this.authService.sendVerificationEmail(
       data.userId,
       data.url,
-      cooldownSeconds
+      cooldownSeconds,
     );
 
     return { message: "Verification email sent successfully" };

@@ -9,7 +9,6 @@ import {
   Req,
   UseGuards,
   Query,
-  ForbiddenException,
   UseInterceptors,
   UploadedFiles,
 } from "@nestjs/common";
@@ -20,8 +19,8 @@ import { UpdateSongDto } from "./dto/update-song.dto";
 import { FindAllDto } from "./dto/find-all.dto";
 import { GetSongsByIdsDto } from "./dto/get-songs-by-ids.dto";
 import { JWTGuard } from "@/auth/guards/jwt.guard";
+import { AdminGuard } from "@/auth/guards/admin.guard";
 import { JwtPayload } from "@/auth/types/jwt-payload.type";
-import { AccessControlService } from "@/common/services/access-control.service";
 import { FileUploadService } from "@/common/services/file-upload.service";
 import { AuthenticatedRequest } from "@/auth/types/authenticated-request.type";
 
@@ -30,8 +29,7 @@ import { AuthenticatedRequest } from "@/auth/types/authenticated-request.type";
 export class SongsController {
   constructor(
     private readonly songsService: SongsService,
-    private readonly accessControlService: AccessControlService,
-    private readonly fileUploadService: FileUploadService
+    private readonly fileUploadService: FileUploadService,
   ) {}
 
   @Post()
@@ -64,21 +62,13 @@ export class SongsController {
     return this.songsService.remove(id);
   }
 
+  @UseGuards(AdminGuard)
   @Patch(":id/verify")
   async toggleVerifiedStatus(
     @Param("id") id: string,
-    @Req() request: AuthenticatedRequest,
-    @Body() data: { verified: boolean }
+
+    @Body() data: { verified: boolean },
   ) {
-    const currentUser = request.user as JwtPayload;
-    const isAdmin = await this.accessControlService.isUserAdmin(currentUser.id);
-
-    if (!isAdmin) {
-      throw new ForbiddenException(
-        "Only administrators can change verification status"
-      );
-    }
-
     return this.songsService.updateVerifiedStatus(id, data.verified);
   }
 
@@ -90,32 +80,25 @@ export class SongsController {
   @Post("by-ids")
   findManyByIds(
     @Body() getSongsByIdsDto: GetSongsByIdsDto,
-    @Req() request: AuthenticatedRequest
+    @Req() request: AuthenticatedRequest,
   ) {
     const currentUser = request.user as JwtPayload;
     return this.songsService.findManyByIds(
       getSongsByIdsDto.ids,
-      currentUser.id
+      currentUser.id,
     );
   }
 
+  @UseGuards(AdminGuard)
   @Post("import")
   @UseInterceptors(
-    FilesInterceptor("files", 10, FileUploadService.multerOptions)
+    FilesInterceptor("files", 10, FileUploadService.multerOptions),
   )
   async importSongsFromFiles(
     @UploadedFiles() files: Express.Multer.File[],
-    @Req() request: AuthenticatedRequest
+    @Req() request: AuthenticatedRequest,
   ) {
     const currentUser = request.user as JwtPayload;
-    const isAdmin = await this.accessControlService.isUserAdmin(currentUser.id);
-
-    if (!isAdmin) {
-      throw new ForbiddenException(
-        "Only administrators can import songs from files"
-      );
-    }
-
     const result = {
       processed: 0,
       imported: 0,
@@ -132,14 +115,14 @@ export class SongsController {
 
           if (!Array.isArray(songs)) {
             result.errors.push(
-              `Файл ${file.originalname} должен содержать массив песен`
+              `Файл ${file.originalname} должен содержать массив песен`,
             );
             continue;
           }
 
           const importResult = await this.songsService.importSongs(
             songs,
-            currentUser.id
+            currentUser.id,
           );
 
           result.imported += importResult.imported;
@@ -150,7 +133,7 @@ export class SongsController {
           }
         } catch (error) {
           result.errors.push(
-            `Ошибка обработки файла ${file.originalname}: ${error.message}`
+            `Ошибка обработки файла ${file.originalname}: ${error.message}`,
           );
         } finally {
           this.fileUploadService.removeFile(file.path);

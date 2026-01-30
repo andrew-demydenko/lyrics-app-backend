@@ -15,6 +15,7 @@ import {
   SendBulkNotificationDto,
 } from "./dto/send-notification.dto";
 import { JWTGuard } from "@/auth/guards/jwt.guard";
+import { AdminGuard } from "@/auth/guards/admin.guard";
 
 @Controller("notifications")
 export class NotificationsController {
@@ -42,7 +43,7 @@ export class NotificationsController {
     return { message: "Push token unregistered successfully" };
   }
 
-  @UseGuards(JWTGuard)
+  @UseGuards(AdminGuard)
   @Post("send/:userId")
   async sendNotification(
     @Param("userId") userId: string,
@@ -55,15 +56,13 @@ export class NotificationsController {
     );
   }
 
-  @UseGuards(JWTGuard)
+  @UseGuards(AdminGuard)
   @Post("send-bulk")
   async sendBulkNotifications(
     @Body() sendBulkNotificationDto: SendBulkNotificationDto,
-    @Req() req: any,
   ) {
     return this.notificationsService.sendBulkNotifications(
       sendBulkNotificationDto,
-      req.user,
     );
   }
 
@@ -79,9 +78,9 @@ export class NotificationsController {
     );
   }
 
-  @UseGuards(JWTGuard)
+  @UseGuards(AdminGuard)
   @Post("retry-failed")
   async retryFailedNotifications(@Req() req: any) {
-    return this.notificationsService.retryFailedNotifications(req.user);
+    return this.notificationsService.retryFailedNotifications();
   }
 }

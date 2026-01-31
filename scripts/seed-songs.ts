@@ -1,12 +1,16 @@
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { PrismaClient } from "../.prisma/client";
 import {
   S3Client,
   ListObjectsV2Command,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { parseChordText } from "../src/songs/utils/chord-parser";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL }),
+});
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 // Setup S3 / RustFS

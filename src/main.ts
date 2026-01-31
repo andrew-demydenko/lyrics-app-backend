@@ -1,6 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import * as cookieParser from "cookie-parser";
+import cookieParser from "cookie-parser";
 import { ValidationPipe, BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Request, Response, NextFunction } from "express";
@@ -48,7 +48,7 @@ async function bootstrap() {
         return new BadRequestException(result);
       },
       stopAtFirstError: true,
-    })
+    }),
   );
 
   app.enableCors({

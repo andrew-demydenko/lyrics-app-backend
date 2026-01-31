@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
-import { User } from "prisma/prisma-client";
+import { User } from "prisma/client";
 
 @Injectable()
 export class UserFieldsExcludeInterceptor implements NestInterceptor {
@@ -24,7 +24,7 @@ export class UserFieldsExcludeInterceptor implements NestInterceptor {
           removeFields(data);
         }
         return data;
-      })
+      }),
     );
   }
 }

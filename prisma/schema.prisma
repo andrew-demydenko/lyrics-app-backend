@@ -2,12 +2,13 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client"
+  output     = "../.prisma"
+  engineType = "client"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -58,6 +59,7 @@ model Song {
   shared   Boolean
   verified Boolean @default(false)
   views    Int     @default(0)
+  category String?
 
   @@map("song")
 }
@@ -87,24 +89,24 @@ model Playlist {
 }
 
 model Notification {
-  id            String    @id @default(uuid())
-  createdAt     DateTime  @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
 
-  userId        String    @map("user_id")
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  title         String
-  body          String
-  data          String?
+  title String
+  body  String
+  data  String?
 
-  expoPushToken String    @map("expo_push_token")
-  status        String    @default("pending")
-  expoMessageId String?   @map("expo_message_id")
-  errorMessage  String?   @map("error_message")
-  retryCount    Int       @default(0) @map("retry_count")
+  expoPushToken String  @map("expo_push_token")
+  status        String  @default("pending")
+  expoMessageId String? @map("expo_message_id")
+  errorMessage  String? @map("error_message")
+  retryCount    Int     @default(0) @map("retry_count")
 
-  scheduledFor  DateTime? @map("scheduled_for")
-  sentAt        DateTime? @map("sent_at")
+  scheduledFor DateTime? @map("scheduled_for")
+  sentAt       DateTime? @map("sent_at")
 
   @@index([userId])
   @@index([status])
